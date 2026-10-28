@@ -1,0 +1,24 @@
+{
+  "name": "aegis-cyber-soc",
+  "version": "1.0.0",
+  "description": "AI-Powered Email Threat Detection, GeoLocation and Forensic Intelligence Platform",
+  "main": "src/backend/server.js",
+  "scripts": {
+    "start": "agy-node src/backend/server.js",
+    "test": "agy-node tests/testEngine.js",
+    "test:server": "agy-node tests/testServer.js"
+  },
+  "keywords": [
+    "cybersecurity",
+    "soc",
+    "email-threat-detection",
+    "phishing",
+    "forensics",
+    "geolocation",
+    "homoglyphs",
+    "bec",
+    "mitre-attack"
+  ],
+  "author": "Antigravity Engineering",
+  "license": "MIT"
+}
