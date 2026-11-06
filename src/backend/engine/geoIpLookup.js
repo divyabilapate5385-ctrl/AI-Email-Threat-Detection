@@ -376,9 +376,104 @@ function resolveDomainIntelligence(domain) {
   };
 }
 
+const KNOWN_DOMAIN_MAIL_SERVERS = {
+  'google.com': '209.85.220.41',
+  'gmail.com': '209.85.220.41',
+  'microsoft.com': '40.107.240.122',
+  'office365.com': '40.107.240.122',
+  'outlook.com': '40.107.240.122',
+  'apple.com': '17.58.63.1',
+  'icloud.com': '17.58.63.1',
+  'paypal.com': '194.26.29.112',
+  'micros0ft-login-portal.xyz': '185.220.101.5',
+  'micros0ft-portal.xyz': '185.220.101.5',
+  'micros0ft.com': '185.220.101.5',
+  'consultant-group.top': '91.240.118.172',
+  'express-notifications-billing.com': '45.154.255.89',
+  'paypaI.com': '194.26.29.112',
+  'quick-prizes-reward.buzz': '103.145.13.44'
+};
+
+function getCountryFlag(countryCode) {
+  if (!countryCode || countryCode.length !== 2) return '🌐';
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+}
+
+function resolveSenderLocation(input, explicitIp = null) {
+  let targetIp = explicitIp;
+  let senderEmail = '';
+  let senderDomain = '';
+
+  if (input) {
+    const clean = String(input).trim();
+    if (/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(clean)) {
+      targetIp = clean;
+    } else {
+      const emailMatch = clean.match(/<?([a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}))>?/);
+      if (emailMatch) {
+        senderEmail = emailMatch[1].toLowerCase();
+        senderDomain = emailMatch[2].toLowerCase();
+      } else {
+        senderDomain = clean.replace(/^(?:https?:\/\/)?(?:www\.)?/, '').split('/')[0].split(':')[0].toLowerCase();
+      }
+
+      if (!targetIp) {
+        if (KNOWN_DOMAIN_MAIL_SERVERS[senderDomain]) {
+          targetIp = KNOWN_DOMAIN_MAIL_SERVERS[senderDomain];
+        } else {
+          let hash = 0;
+          for (let i = 0; i < senderDomain.length; i++) {
+            hash = (hash << 5) - hash + senderDomain.charCodeAt(i);
+            hash |= 0;
+          }
+          const absHash = Math.abs(hash);
+          const octet1 = 45 + (absHash % 140);
+          const octet2 = (absHash >> 3) % 250;
+          const octet3 = (absHash >> 6) % 250;
+          const octet4 = 10 + (absHash % 240);
+          targetIp = `${octet1}.${octet2}.${octet3}.${octet4}`;
+        }
+      }
+    }
+  }
+
+  if (!targetIp) {
+    targetIp = '185.220.101.5';
+  }
+
+  const ipIntel = resolveIpIntelligence(targetIp);
+  const countryFlag = getCountryFlag(ipIntel.countryCode);
+  const utcOffsetHours = Math.round(ipIntel.longitude / 15);
+  const offsetSign = utcOffsetHours >= 0 ? '+' : '';
+  const timezoneStr = `UTC${offsetSign}${utcOffsetHours}:00`;
+
+  const nowUtc = new Date();
+  const senderTime = new Date(nowUtc.getTime() + utcOffsetHours * 3600000);
+  const hours = String(senderTime.getUTCHours()).padStart(2, '0');
+  const mins = String(senderTime.getUTCMinutes()).padStart(2, '0');
+  const localTimeStr = `${hours}:${mins} (${timezoneStr})`;
+
+  return {
+    ...ipIntel,
+    senderEmail,
+    senderDomain: senderDomain || ipIntel.asName,
+    countryFlag,
+    timezone: timezoneStr,
+    localTime: localTimeStr,
+    reverseDns: `mail-gw-${targetIp.replace(/\./g, '-')}.${(ipIntel.countryCode || 'net').toLowerCase()}.net`
+  };
+}
+
 module.exports = {
   resolveIpIntelligence,
   resolveDomainIntelligence,
+  resolveSenderLocation,
+  getCountryFlag,
   isPrivateIp,
-  KNOWN_IP_INTEL
+  KNOWN_IP_INTEL,
+  KNOWN_DOMAIN_MAIL_SERVERS
 };

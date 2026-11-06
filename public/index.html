@@ -381,6 +381,44 @@
                 </div>
               </div>
 
+              <!-- Tracked Sender Geolocation & Origin Card -->
+              <div class="card" id="scanSenderLocationCard" style="display: none; background: #26364A; border: 1px solid var(--border-color); margin-bottom: 18px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--cyan-accent); display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    Tracked Sender Geolocation & Origin
+                  </h4>
+                  <span id="scanSenderCountryBadge" class="badge badge-neutral" style="font-size: 0.85rem; padding: 4px 10px;">🌐 SENDER LOCATION</span>
+                </div>
+
+                <div class="grid-2" style="margin-bottom: 12px; gap: 12px;">
+                  <div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 2px;">PHYSICAL SENDER ORIGIN</p>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);" id="scanSenderCityCountry">Unknown City, Country</div>
+                    <div style="font-size: 0.78rem; color: var(--cyan-accent); font-family: var(--font-mono); margin-top: 2px;" id="scanSenderCoords">Coordinates: Pending</div>
+                  </div>
+                  <div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 2px;">NETWORK INFRASTRUCTURE</p>
+                    <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);" id="scanSenderIsp">Resolving Mail Gateway...</div>
+                    <div style="font-size: 0.78rem; color: var(--text-secondary); font-family: var(--font-mono); margin-top: 2px;" id="scanSenderAsn">AS0 (Pending)</div>
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-color); font-size: 0.8rem; flex-wrap: wrap; gap: 8px;">
+                  <div style="display: flex; gap: 12px; align-items: center;" id="scanSenderExtraPills">
+                    <span>🕒 Local Time: <strong id="scanSenderTime">--</strong></span>
+                    <span>🌐 Host IP: <strong id="scanSenderIp" style="font-family: var(--font-mono);">--</strong></span>
+                  </div>
+                  <button class="btn btn-cyan btn-sm" onclick="navigateToSenderForensics()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon></svg>
+                    View on Radar Map
+                  </button>
+                </div>
+              </div>
+
               <!-- 6 Core Modules Breakdown -->
               <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 12px;">Explainable Module Breakdown</h4>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;" id="modulesBreakdownGrid">
@@ -514,6 +552,36 @@
 
         <!-- ==================== VIEW 4: FORENSIC INVESTIGATION ==================== -->
         <section id="view-forensics" class="view-section">
+          <!-- Live Sender Location & Origin Tracker Card -->
+          <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--cyan-accent); background: #26364A;">
+            <div class="card-header" style="margin-bottom: 12px;">
+              <div>
+                <h3 class="card-title" style="color: var(--cyan-accent);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  Live Sender Location & Origin Tracker
+                </h3>
+                <span class="card-subtitle">Track the geographic coordinates, country, city, ISP, ASN, and transit route of any email sender</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+              <input type="text" class="form-input" id="trackerInput" placeholder="Enter sender email (e.g. alert@micros0ft-portal.xyz), domain, or IP..." style="flex: 1; min-width: 260px;" onkeydown="if(event.key==='Enter') trackSenderLive();">
+              <button class="btn btn-cyan" onclick="trackSenderLive()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                Track Sender Location
+              </button>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 0.8rem; color: var(--text-secondary);">
+              <span>Quick Attack Tracker Tests:</span>
+              <button class="btn btn-outline btn-sm" onclick="trackSampleSender('sample-m365-phish')">🇩🇪 Tor Exit (Frankfurt)</button>
+              <button class="btn btn-outline btn-sm" onclick="trackSampleSender('sample-bec-ceo')">🇷🇺 BEC Relay (Moscow)</button>
+              <button class="btn btn-outline btn-sm" onclick="trackSampleSender('sample-docusign-malware')">🇳🇱 Trojan Host (Amsterdam)</button>
+              <button class="btn btn-outline btn-sm" onclick="trackSampleSender('sample-clean-google')">🇺🇸 Clean Google Relay</button>
+            </div>
+          </div>
+
           <div class="card" style="margin-bottom: 20px;">
             <div class="card-header">
               <h3 class="card-title">

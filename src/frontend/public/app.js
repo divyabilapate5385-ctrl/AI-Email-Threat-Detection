@@ -458,6 +458,29 @@ function renderScanResult(data) {
   heading.textContent = `${verdict} Threat Detected (Risk Score: ${score}/100)`;
   summary.textContent = analysis.explanation;
 
+  // Tracked Sender Geolocation Radar Card
+  const fd = analysis.forensicData || {};
+  const senderLoc = fd.senderLocation || fd.ipIntelligence || null;
+  const locCard = document.getElementById('scanSenderLocationCard');
+  if (locCard && senderLoc) {
+    locCard.style.display = 'block';
+    const flag = senderLoc.countryFlag || '🌐';
+    const city = senderLoc.city || 'Unknown City';
+    const country = senderLoc.country || 'Unknown Country';
+    const lat = senderLoc.latitude !== undefined ? Number(senderLoc.latitude).toFixed(4) : '0.0000';
+    const lng = senderLoc.longitude !== undefined ? Number(senderLoc.longitude).toFixed(4) : '0.0000';
+
+    document.getElementById('scanSenderCountryBadge').textContent = `${flag} ${country.toUpperCase()}`;
+    document.getElementById('scanSenderCityCountry').textContent = `${flag} ${city}, ${country}`;
+    document.getElementById('scanSenderCoords').textContent = `Coordinates: ${lat}° N, ${lng}° E`;
+    document.getElementById('scanSenderIsp').textContent = senderLoc.isp || 'Commercial Transit';
+    document.getElementById('scanSenderAsn').textContent = `${senderLoc.asn || 'AS0'} (${senderLoc.asName || 'Unknown Network'})`;
+    document.getElementById('scanSenderTime').textContent = senderLoc.localTime || senderLoc.timezone || '--';
+    document.getElementById('scanSenderIp').textContent = senderLoc.ip || fd.originatingIp || '--';
+  } else if (locCard) {
+    locCard.style.display = 'none';
+  }
+
   // 6 Modules
   const m = analysis.modules;
   updateModuleCard('Phishing', m.phishing.score);
@@ -651,13 +674,14 @@ function loadForensicScan(scanId) {
   if (!scan) return;
 
   const fd = scan.forensic_data || {};
-  const ipIntel = fd.ipIntelligence || {};
+  const ipIntel = fd.senderLocation || fd.ipIntelligence || {};
   const domainIntel = fd.domainIntelligence || {};
   const auth = fd.authentication || {};
   const hops = fd.receivedHops || [];
+  const flag = ipIntel.countryFlag || '🌐';
 
   // Top Stats
-  document.getElementById('fGeoLocation').textContent = `${ipIntel.city || 'Unknown'}, ${ipIntel.country || 'Unknown'}`;
+  document.getElementById('fGeoLocation').textContent = `${flag} ${ipIntel.city || 'Unknown City'}, ${ipIntel.country || 'Unknown Country'}`;
   document.getElementById('fGeoIsp').textContent = `ASN: ${ipIntel.asn || 'AS0'} | ${ipIntel.isp || 'Commercial Transit'}`;
   
   const flagsEl = document.getElementById('fGeoFlags');
@@ -665,7 +689,7 @@ function loadForensicScan(scanId) {
   if (ipIntel.isTor) flagsHtml += '<span class="badge badge-malicious" style="margin-right: 4px;">TOR EXIT RELAY</span>';
   if (ipIntel.isVpn) flagsHtml += '<span class="badge badge-suspicious" style="margin-right: 4px;">ANONYMOUS VPN</span>';
   if (ipIntel.isProxy) flagsHtml += '<span class="badge badge-suspicious">WEB PROXY</span>';
-  flagsEl.innerHTML = flagsHtml || '<span class="badge badge-safe">STANDARD RESIDENTIAL/COMMERCIAL</span>';
+  flagsEl.innerHTML = flagsHtml || '<span class="badge badge-safe">STANDARD SENDER GATEWAY</span>';
 
   // Auth Badges
   const authBadges = document.getElementById('fAuthBadges');
@@ -679,57 +703,168 @@ function loadForensicScan(scanId) {
       ? 'Spoofing alert: Email domain authentication check failed alignment.'
       : 'Cryptographic SPF/DKIM validation passed successfully.';
 
-  // Domain WHOIS
-  document.getElementById('fDomainAge').textContent = `${domainIntel.ageDays || '--'} Days Old`;
-  document.getElementById('fDomainRegistrar').textContent = `Registrar: ${domainIntel.registrar || 'Unknown'}`;
-  document.getElementById('fDomainMx').textContent = `MX: ${domainIntel.mxRecord || 'None'}`;
+  // Domain WHOIS & Local Time
+  document.getElementById('fDomainAge').textContent = `${ipIntel.timezone || domainIntel.ageDays + ' Days Old'}`;
+  document.getElementById('fDomainRegistrar').textContent = `Local Time: ${ipIntel.localTime || domainIntel.registrar || 'Unknown'}`;
+  document.getElementById('fDomainMx').textContent = `Host IP: ${ipIntel.ip || scan.sender || '--'}`;
 
   // Geolocation Radar SVG
-  renderGeoMap(ipIntel.latitude || 50.11, ipIntel.longitude || 8.68, ipIntel.country || 'Germany', ipIntel.ip || '185.220.101.5');
+  renderGeoMap(ipIntel.latitude || 50.11, ipIntel.longitude || 8.68, ipIntel.country || 'Germany', ipIntel.ip || '185.220.101.5', flag, ipIntel.city || 'Frankfurt', ipIntel.isp || '', ipIntel.localTime || '');
 
   // Hop Tracer
   renderHopTracer(hops);
 }
 
-function renderGeoMap(lat, lng, country, ip) {
+function renderGeoMap(lat, lng, country, ip, countryFlag = '🌐', city = '', isp = '', localTime = '') {
   const canvas = document.getElementById('geoMapCanvas');
   const sub = document.getElementById('fMapSubtitle');
   if (!canvas) return;
 
-  sub.textContent = `Coordinates: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E | Observed Host: ${ip} (${country})`;
+  const validLat = Number(lat) || 0;
+  const validLng = Number(lng) || 0;
+  const flag = countryFlag || '🌐';
+  const cityStr = city ? `${city}, ` : '';
+  sub.textContent = `Coordinates: ${validLat.toFixed(4)}° N, ${validLng.toFixed(4)}° E | Tracked Sender Origin: ${flag} ${cityStr}${country} (Host: ${ip})`;
 
-  // Convert lat/lng to roughly 0-600 x 0-300 SVG projection
-  // Equirectangular mapping: x = (lng + 180) * (600 / 360), y = (90 - lat) * (300 / 180)
-  const x = Math.round((lng + 180) * (600 / 360));
-  const y = Math.round((90 - lat) * (300 / 180));
+  // Convert lat/lng to roughly 600 x 300 SVG projection
+  const x = Math.round((validLng + 180) * (600 / 360));
+  const y = Math.round((90 - validLat) * (300 / 180));
 
   canvas.innerHTML = `
-    <svg width="100%" height="100%" viewBox="0 0 600 300" style="background: #192331;">
-      <!-- Grid Lines -->
-      <line x1="0" y1="150" x2="600" y2="150" stroke="#2c3c52" stroke-dasharray="4 4" />
-      <line x1="300" y1="0" x2="300" y2="300" stroke="#2c3c52" stroke-dasharray="4 4" />
-      <circle cx="300" cy="150" r="100" fill="none" stroke="#2c3c52" stroke-dasharray="2 2" opacity="0.4" />
-      <circle cx="300" cy="150" r="140" fill="none" stroke="#2c3c52" stroke-dasharray="2 2" opacity="0.3" />
+    <svg width="100%" height="100%" viewBox="0 0 600 300" style="background: radial-gradient(circle at center, #1e2c3d 0%, #151e2b 100%);">
+      <!-- Latitude / Longitude Grid Matrix -->
+      <line x1="0" y1="50" x2="600" y2="50" stroke="#2c3c52" stroke-dasharray="3 3" opacity="0.3" />
+      <line x1="0" y1="150" x2="600" y2="150" stroke="#3b506b" stroke-width="1.2" opacity="0.6" />
+      <line x1="0" y1="250" x2="600" y2="250" stroke="#2c3c52" stroke-dasharray="3 3" opacity="0.3" />
+      <line x1="100" y1="0" x2="100" y2="300" stroke="#2c3c52" stroke-dasharray="3 3" opacity="0.3" />
+      <line x1="200" y1="0" x2="200" y2="300" stroke="#2c3c52" stroke-dasharray="3 3" opacity="0.3" />
+      <line x1="300" y1="0" x2="300" y2="300" stroke="#3b506b" stroke-width="1.2" opacity="0.6" />
+      <line x1="400" y1="0" x2="400" y2="300" stroke="#2c3c52" stroke-dasharray="3 3" opacity="0.3" />
+      <line x1="500" y1="0" x2="500" y2="300" stroke="#2c3c52" stroke-dasharray="3 3" opacity="0.3" />
 
-      <!-- Simplified World Outlines -->
-      <!-- Americas -->
-      <path d="M 90 60 Q 140 70 170 110 Q 150 160 170 200 Q 190 260 160 280 Q 130 250 130 190 Q 90 140 80 90 Z" fill="#253549" stroke="#374b63" />
+      <!-- Concentric Radar Range Rings -->
+      <circle cx="300" cy="150" r="80" fill="none" stroke="#2a3c54" stroke-dasharray="2 2" opacity="0.4" />
+      <circle cx="300" cy="150" r="140" fill="none" stroke="#2a3c54" stroke-dasharray="2 2" opacity="0.3" />
+      <circle cx="300" cy="150" r="210" fill="none" stroke="#2a3c54" stroke-dasharray="2 2" opacity="0.2" />
+
+      <!-- Continental Landmass Projections -->
+      <!-- North & South America -->
+      <path d="M 50 40 Q 80 40 120 50 Q 160 70 160 110 Q 140 135 155 160 Q 175 190 180 230 Q 170 270 145 285 Q 120 270 125 210 Q 110 160 80 130 Q 50 110 40 70 Z" fill="#243447" stroke="#374b63" stroke-width="1" />
       <!-- Eurasia & Africa -->
-      <path d="M 270 50 Q 380 40 480 80 Q 520 140 450 160 Q 370 140 330 110 Q 320 160 350 220 Q 310 260 280 200 Q 250 140 270 50 Z" fill="#253549" stroke="#374b63" />
-      <!-- Australia -->
-      <path d="M 480 210 Q 540 200 550 240 Q 510 270 470 250 Z" fill="#253549" stroke="#374b63" />
+      <path d="M 270 50 Q 360 35 460 65 Q 520 90 530 140 Q 480 160 450 150 Q 430 180 435 240 Q 400 275 360 270 Q 320 230 330 170 Q 290 150 265 110 Q 255 70 270 50 Z" fill="#243447" stroke="#374b63" stroke-width="1" />
+      <!-- Australia & Oceania -->
+      <path d="M 470 190 Q 520 180 545 210 Q 540 250 500 260 Q 460 240 470 190 Z" fill="#243447" stroke="#374b63" stroke-width="1" />
 
-      <!-- Target Geolocation Ping -->
+      <!-- Crosshairs to Target Coordinates -->
+      <line x1="${x}" y1="0" x2="${x}" y2="300" stroke="rgba(88, 213, 208, 0.25)" stroke-dasharray="2 2" />
+      <line x1="0" y1="${y}" x2="600" y2="${y}" stroke="rgba(88, 213, 208, 0.25)" stroke-dasharray="2 2" />
+
+      <!-- Target Geolocation Pin & Pulsing Radar Wave -->
       <g>
-        <circle cx="${x}" cy="${y}" r="20" fill="rgba(240, 120, 120, 0.2)">
-          <animate attributeName="r" values="6;26" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite" />
+        <circle cx="${x}" cy="${y}" r="32" fill="rgba(88, 213, 208, 0.15)">
+          <animate attributeName="r" values="8;38" dur="2.4s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.8;0" dur="2.4s" repeatCount="indefinite" />
         </circle>
-        <circle cx="${x}" cy="${y}" r="6" fill="#F07878" stroke="#fff" stroke-width="2" />
-        <text x="${x + 12}" y="${y + 4}" fill="#E7EDF5" font-size="11" font-weight="700" font-family="monospace">${ip} (${country})</text>
+        <circle cx="${x}" cy="${y}" r="20" fill="rgba(240, 120, 120, 0.25)">
+          <animate attributeName="r" values="6;24" dur="1.8s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.9;0" dur="1.8s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="${x}" cy="${y}" r="6" fill="#F07878" stroke="#FFFFFF" stroke-width="2" />
+
+        <!-- Floating Target Badge with Flag & City -->
+        <rect x="${x > 420 ? x - 170 : x + 12}" y="${y > 230 ? y - 48 : y - 18}" width="160" height="40" rx="4" fill="#1b2636" stroke="#58d5d0" stroke-width="1.2" />
+        <text x="${x > 420 ? x - 160 : x + 22}" y="${y > 230 ? y - 32 : y - 2}" fill="#58d5d0" font-size="11" font-weight="700">${flag} ${city || country}</text>
+        <text x="${x > 420 ? x - 160 : x + 22}" y="${y > 230 ? y - 16 : y + 14}" fill="#e7edf5" font-size="10" font-family="monospace">${ip} (${validLat.toFixed(2)}°, ${validLng.toFixed(2)}°)</text>
       </g>
     </svg>
   `;
+}
+
+async function trackSenderLive() {
+  const inputEl = document.getElementById('trackerInput');
+  const query = (inputEl ? inputEl.value : '').trim();
+  if (!query) {
+    alert('Please enter a sender email address (e.g. alert@micros0ft-portal.xyz), domain, or IP address.');
+    return;
+  }
+
+  const sub = document.getElementById('fMapSubtitle');
+  if (sub) sub.textContent = `Resolving sender origin coordinates for "${query}"...`;
+
+  try {
+    const res = await fetch(`/api/track/sender?query=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    if (!data.success || !data.senderLocation) {
+      alert(data.error || 'Could not resolve sender location.');
+      return;
+    }
+
+    const loc = data.senderLocation;
+    const flag = loc.countryFlag || '🌐';
+
+    // Update Top Metric Cards
+    document.getElementById('fGeoLocation').textContent = `${flag} ${loc.city || 'Unknown City'}, ${loc.country || 'Unknown Country'}`;
+    document.getElementById('fGeoIsp').textContent = `ASN: ${loc.asn || 'AS0'} | ${loc.isp || 'Commercial Transit'}`;
+
+    const flagsEl = document.getElementById('fGeoFlags');
+    let flagsHtml = '';
+    if (loc.isTor) flagsHtml += '<span class="badge badge-malicious" style="margin-right: 4px;">TOR EXIT RELAY</span>';
+    if (loc.isVpn) flagsHtml += '<span class="badge badge-suspicious" style="margin-right: 4px;">ANONYMOUS VPN</span>';
+    if (loc.isProxy) flagsHtml += '<span class="badge badge-suspicious" style="margin-right: 4px;">WEB PROXY</span>';
+    flagsEl.innerHTML = flagsHtml || '<span class="badge badge-safe">DIRECT SENDER GATEWAY</span>';
+
+    // Domain WHOIS / Local Time Card
+    document.getElementById('fDomainAge').textContent = `${loc.timezone || 'UTC'}`;
+    document.getElementById('fDomainRegistrar').textContent = `Local Time: ${loc.localTime || '--'}`;
+    document.getElementById('fDomainMx').textContent = `Sender Host: ${loc.ip}`;
+
+    // Render Geolocation Map
+    renderGeoMap(loc.latitude || 0, loc.longitude || 0, loc.country || 'Unknown', loc.ip || '0.0.0.0', flag, loc.city || '', loc.isp || '', loc.localTime || '');
+
+    // Render Synthetic Hop Route for this sender
+    const syntheticHops = [
+      {
+        hop: 1,
+        fromHost: loc.senderEmail || loc.senderDomain || `client-${loc.ip.replace(/\./g, '-')}`,
+        byServer: `mail-gw.${loc.countryCode ? loc.countryCode.toLowerCase() : 'net'}.provider.net`,
+        ip: loc.ip,
+        timestamp: new Date().toUTCString()
+      },
+      {
+        hop: 2,
+        fromHost: `mail-gw.${loc.countryCode ? loc.countryCode.toLowerCase() : 'net'}.provider.net`,
+        byServer: 'mx-inbound.aegis-defense.corp',
+        ip: '10.200.4.1',
+        timestamp: new Date(Date.now() + 1500).toUTCString()
+      }
+    ];
+    renderHopTracer(syntheticHops);
+  } catch (err) {
+    console.error('Tracking Error:', err);
+    alert('Failed to connect to sender tracking service.');
+  }
+}
+
+function trackSampleSender(sampleId) {
+  const sample = state.samples.find(s => s.id === sampleId);
+  if (!sample) return;
+  const target = sample.data.sender || sample.data.ip;
+  const inputEl = document.getElementById('trackerInput');
+  if (inputEl) inputEl.value = target;
+  trackSenderLive();
+}
+
+function navigateToSenderForensics() {
+  navigateTo('forensics');
+  if (state.currentScanResult) {
+    const fd = state.currentScanResult.analysis.forensicData || {};
+    const loc = fd.senderLocation || fd.ipIntelligence;
+    if (loc) {
+      const inputEl = document.getElementById('trackerInput');
+      if (inputEl) inputEl.value = loc.senderEmail || loc.senderDomain || loc.ip;
+      trackSenderLive();
+    }
+  }
 }
 
 function renderHopTracer(hops) {

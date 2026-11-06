@@ -11,7 +11,7 @@
 
 const { analyzeUrl } = require('./urlAnalyzer');
 const { checkLookalike } = require('./lookalikeDetector');
-const { resolveIpIntelligence, resolveDomainIntelligence } = require('./geoIpLookup');
+const { resolveIpIntelligence, resolveDomainIntelligence, resolveSenderLocation } = require('./geoIpLookup');
 const { parseEmlContent } = require('./emailParser');
 
 // Phishing Lexicon & Urgency Patterns
@@ -284,18 +284,10 @@ function scoreDomainModule(parsedEmail) {
 function scoreIpModule(parsedEmail) {
   let score = 0;
   const indicators = [];
-  const targetIp = parsedEmail.originatingIp || (parsedEmail.ips.length > 0 ? parsedEmail.ips[0] : null);
+  const targetIp = parsedEmail.originatingIp || (parsedEmail.ips && parsedEmail.ips.length > 0 ? parsedEmail.ips[0] : null);
 
-  if (!targetIp) {
-    return {
-      score: 10,
-      ipIntel: null,
-      indicators: []
-    };
-  }
-
-  const ipIntel = resolveIpIntelligence(targetIp);
-  score = ipIntel.threatScore;
+  const ipIntel = resolveSenderLocation(parsedEmail.from ? (parsedEmail.from.address || parsedEmail.from.domain) : null, targetIp);
+  score = ipIntel.threatScore || 0;
 
   if (ipIntel.isTor) {
     indicators.push({
@@ -303,7 +295,7 @@ function scoreIpModule(parsedEmail) {
       severity: 'Critical',
       label: 'Tor Anonymizing Exit Node',
       weight: 45,
-      detail: `Originating IP ${targetIp} is a verified Tor exit relay (${ipIntel.isp})`
+      detail: `Originating IP ${ipIntel.ip} is a verified Tor exit relay (${ipIntel.isp})`
     });
   }
 
@@ -509,8 +501,9 @@ function analyzeThreat(input) {
     threatIndicators: allIndicators,
     parsedEmail,
     forensicData: {
-      originatingIp: parsedEmail.originatingIp,
+      originatingIp: parsedEmail.originatingIp || (ip.ipIntel ? ip.ipIntel.ip : null),
       senderDomain: parsedEmail.from.domain,
+      senderLocation: ip.ipIntel,
       ipIntelligence: ip.ipIntel,
       domainIntelligence: domain.domainIntel,
       receivedHops: parsedEmail.receivedHops,

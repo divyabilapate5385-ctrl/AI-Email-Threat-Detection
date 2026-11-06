@@ -12,7 +12,7 @@ const crypto = require('node:crypto');
 const { ScansRepo, IncidentsRepo, BlocklistRepo, ThreatIntelRepo, VpnRepo, SettingsRepo } = require('./db/database');
 const { analyzeThreat } = require('./engine/threatScorer');
 const { checkLookalike } = require('./engine/lookalikeDetector');
-const { resolveIpIntelligence, resolveDomainIntelligence } = require('./engine/geoIpLookup');
+const { resolveIpIntelligence, resolveDomainIntelligence, resolveSenderLocation } = require('./engine/geoIpLookup');
 const { SAMPLE_THREATS } = require('./samples/sampleThreats');
 
 const PORT = process.env.PORT || 3000;
@@ -344,8 +344,10 @@ async function handleRequest(req, res) {
         const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(q);
         const intelHit = ThreatIntelRepo.lookup(q);
         const lookalike = checkLookalike(q);
-        const ipInfo = isIp ? resolveIpIntelligence(q) : null;
-        const domainInfo = !isIp && q.includes('.') ? resolveDomainIntelligence(q) : null;
+        const senderLoc = resolveSenderLocation(q);
+        const ipInfo = isIp ? resolveIpIntelligence(q) : senderLoc;
+        const cleanDomain = q.includes('@') ? q.split('@')[1] : q;
+        const domainInfo = !isIp && cleanDomain.includes('.') ? resolveDomainIntelligence(cleanDomain) : null;
 
         return sendJson(res, 200, {
           success: true,
@@ -353,8 +355,22 @@ async function handleRequest(req, res) {
           isIp,
           threatIntel: intelHit,
           lookalike,
+          senderLocation: senderLoc,
           ipIntelligence: ipInfo,
           domainIntelligence: domainInfo
+        });
+      }
+
+      // 8b. SENDER GEOLOCATION TRACKER
+      if (pathname === '/api/track/sender' && method === 'GET') {
+        const q = (query.query || query.sender || '').trim();
+        if (!q) return sendJson(res, 400, { error: 'Missing query or sender parameter' });
+
+        const senderLoc = resolveSenderLocation(q);
+        return sendJson(res, 200, {
+          success: true,
+          query: q,
+          senderLocation: senderLoc
         });
       }
 
