@@ -4,9 +4,12 @@
   "description": "AI-Powered Email Threat Detection, GeoLocation and Forensic Intelligence Platform",
   "main": "src/backend/server.js",
   "scripts": {
-    "start": "agy-node src/backend/server.js",
-    "test": "agy-node tests/testEngine.js",
-    "test:server": "agy-node tests/testServer.js"
+    "start": "node src/backend/server.js",
+    "test": "node tests/testEngine.js",
+    "test:server": "node tests/testServer.js"
+  },
+  "engines": {
+    "node": ">=20.x"
   },
   "keywords": [
     "cybersecurity",

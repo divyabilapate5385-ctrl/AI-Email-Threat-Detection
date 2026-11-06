@@ -3,25 +3,60 @@
  * Uses Node 24 native SQLite (DatabaseSync) for high-performance persistent storage.
  */
 
-const { DatabaseSync } = require('node:sqlite');
+let DatabaseSync;
+try {
+  DatabaseSync = require('node:sqlite').DatabaseSync;
+} catch (e) {
+  DatabaseSync = null;
+}
 const path = require('node:path');
 const fs = require('node:fs');
+const os = require('node:os');
 const crypto = require('node:crypto');
 const { SCHEMA_SQL } = require('./schema');
 const { SAMPLE_THREATS } = require('../samples/sampleThreats');
 const { analyzeThreat } = require('../engine/threatScorer');
 
-const DB_PATH = path.resolve(__dirname, '../../../aegis_soc.db');
+function resolveDbPath() {
+  const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT);
+  const localDb = path.resolve(__dirname, '../../../aegis_soc.db');
+
+  if (isServerless) {
+    const tmpDir = os.tmpdir() || '/tmp';
+    const tmpDb = path.join(tmpDir, 'aegis_soc.db');
+    try {
+      if (!fs.existsSync(tmpDb) && fs.existsSync(localDb)) {
+        fs.copyFileSync(localDb, tmpDb);
+      }
+      return tmpDb;
+    } catch (err) {
+      console.warn('[Aegis Database] Falling back to memory database:', err.message);
+      return ':memory:';
+    }
+  }
+
+  return localDb;
+}
 
 let dbInstance = null;
 
 function getDb() {
-  if (!dbInstance) {
-    dbInstance = new DatabaseSync(DB_PATH);
-    dbInstance.exec('PRAGMA journal_mode = WAL;');
-    dbInstance.exec('PRAGMA foreign_keys = ON;');
-    dbInstance.exec(SCHEMA_SQL);
-    seedInitialData(dbInstance);
+  if (!dbInstance && DatabaseSync) {
+    try {
+      const dbPath = resolveDbPath();
+      dbInstance = new DatabaseSync(dbPath);
+      try {
+        dbInstance.exec('PRAGMA journal_mode = WAL;');
+      } catch (walErr) {
+        try { dbInstance.exec('PRAGMA journal_mode = MEMORY;'); } catch (_) {}
+      }
+      dbInstance.exec('PRAGMA foreign_keys = ON;');
+      dbInstance.exec(SCHEMA_SQL);
+      seedInitialData(dbInstance);
+    } catch (err) {
+      console.warn('[Aegis Database] SQLite initialization failed:', err.message);
+      dbInstance = null;
+    }
   }
   return dbInstance;
 }
@@ -310,7 +345,7 @@ const IncidentsRepo = {
     const now = new Date().toISOString();
 
     const stmt = db.prepare(`
-      INSERT INTO incidents (
+      INSERT OR REPLACE INTO incidents (
         incident_id, scan_id, created_at, updated_at, title, severity, status,
         category, target_user, source_ip, source_domain, notes, assigned_analyst
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

@@ -16,7 +16,9 @@ const { resolveIpIntelligence, resolveDomainIntelligence } = require('./engine/g
 const { SAMPLE_THREATS } = require('./samples/sampleThreats');
 
 const PORT = process.env.PORT || 3000;
-const PUBLIC_DIR = path.resolve(__dirname, '../frontend/public');
+const PUBLIC_DIR = fs.existsSync(path.resolve(__dirname, '../../../public'))
+  ? path.resolve(__dirname, '../../../public')
+  : path.resolve(__dirname, '../frontend/public');
 
 // In-Memory Rate Limiting: 200 requests per 60 seconds per IP
 const RATE_LIMIT_WINDOW_MS = 60000;
@@ -54,6 +56,19 @@ function sendJson(res, statusCode, data, headers = {}) {
 }
 
 function parseBody(req) {
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === 'object') {
+      return Promise.resolve(req.body);
+    }
+    if (typeof req.body === 'string') {
+      try {
+        return Promise.resolve(JSON.parse(req.body));
+      } catch (err) {
+        return Promise.resolve({ rawText: req.body });
+      }
+    }
+  }
+
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => {
@@ -129,11 +144,23 @@ function serveStatic(req, res, pathname) {
   });
 }
 
-const server = http.createServer(async (req, res) => {
+async function handleRequest(req, res) {
   const parsedUrl = url.parse(req.url, true);
-  const { pathname, query } = parsedUrl;
-  const method = req.method.toUpperCase();
-  const clientIp = req.socket.remoteAddress || '127.0.0.1';
+  let { pathname, query } = parsedUrl;
+  const method = req.method ? req.method.toUpperCase() : 'GET';
+  const clientIp = (req.headers && req.headers['x-forwarded-for'])
+    ? req.headers['x-forwarded-for'].split(',')[0].trim()
+    : (req.socket ? req.socket.remoteAddress : '127.0.0.1');
+
+  // Support Vercel catch-all rewrites or path query
+  if (pathname === '/api/index.js' || pathname === '/api' || pathname === '/api/') {
+    if (query && query.path) {
+      const sub = Array.isArray(query.path) ? query.path.join('/') : query.path;
+      pathname = '/api/' + sub;
+    } else if (req.headers && req.headers['x-matched-path']) {
+      pathname = req.headers['x-matched-path'];
+    }
+  }
 
   // Rate Limiting Check
   if (isRateLimited(clientIp)) {
@@ -418,11 +445,24 @@ const server = http.createServer(async (req, res) => {
     console.error('[Aegis Server Error]', error);
     sendJson(res, 500, { error: 'Internal Server Error', details: error.message });
   }
+}
+
+const server = http.createServer(handleRequest);
+server.handleRequest = handleRequest;
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    // Port already bound by another process or dev server, ignore in test/import mode
+    return;
+  }
+  console.error('[Aegis Server Error]', err);
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[Aegis Cyber SOC] Server listening at http://localhost:${PORT}`);
-  console.log(`[Aegis Cyber SOC] REST API ready and persistent SQLite DB active`);
-});
+if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.LAMBDA_TASK_ROOT) {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`[Aegis Cyber SOC] Server listening at http://localhost:${PORT}`);
+    console.log(`[Aegis Cyber SOC] REST API ready and persistent SQLite DB active`);
+  });
+}
 
 module.exports = server;

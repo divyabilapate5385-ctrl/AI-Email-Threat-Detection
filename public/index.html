@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aegis Cyber SOC | AI-Powered Email Threat Detection & Forensic Intelligence</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Collapsible Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="#overview" class="brand-wrapper">
+          <div class="brand-logo-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+          </div>
+          <div class="brand-info">
+            <span class="brand-name">AEGIS SOC</span>
+            <span class="brand-sub">CYBER INTELLIGENCE</span>
+          </div>
+        </a>
+        <button class="collapse-btn" id="collapseBtn" title="Toggle Sidebar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <span class="nav-section-title">Core Operations</span>
+        <a class="nav-item active" data-target="overview">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span class="nav-label">Overview Dashboard</span>
+        </a>
+
+        <a class="nav-item" data-target="scanner">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <path d="M11 8v6M8 11h6"/>
+          </svg>
+          <span class="nav-label">Email & URL Scanner</span>
+        </a>
+
+        <a class="nav-item" data-target="intel">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-2h2zm0-4h-2V7h2z"/>
+          </svg>
+          <span class="nav-label">Threat Intelligence</span>
+        </a>
+
+        <a class="nav-item" data-target="forensics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          <span class="nav-label">Forensic Investigation</span>
+        </a>
+
+        <span class="nav-section-title">Incident Response</span>
+        <a class="nav-item" data-target="incidents">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span class="nav-label">Alerts & Incidents</span>
+          <span class="nav-badge" id="sidebarIncidentBadge">5</span>
+        </a>
+
+        <a class="nav-item" data-target="history">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span class="nav-label">Scan History</span>
+        </a>
+
+        <span class="nav-section-title">Network & System</span>
+        <a class="nav-item" data-target="vpn">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+          <span class="nav-label">VPN & Traffic Monitor</span>
+        </a>
+
+        <a class="nav-item" data-target="settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+          <span class="nav-label">Settings & Connector</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span>IMAP Stream: <strong>Active</strong></span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="collapse-btn" id="mobileMenuBtn" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <h1 class="page-title" id="pageTitle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            SOC Overview Dashboard
+          </h1>
+        </div>
+
+        <div class="threat-ticker">
+          <span class="ticker-pulse"></span>
+          <span id="tickerText">Threat Feed: TA505 Trojan Dropper blocked • M365 Homoglyph lure active • 0 False Positives today</span>
+        </div>
+
+        <div class="topbar-right">
+          <button class="btn btn-outline btn-sm" id="btnQuickSample">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Simulate Attack
+          </button>
+          <button class="btn btn-cyan btn-sm" id="btnTopScan">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            New Scan
+          </button>
+        </div>
+      </header>
+
+      <!-- View Containers -->
+      <main class="content-body">
+        
+        <!-- ==================== VIEW 1: OVERVIEW DASHBOARD ==================== -->
+        <section id="view-overview" class="view-section active">
+          <!-- KPI Stat Cards -->
+          <div class="stat-grid">
+            <div class="stat-card primary">
+              <div class="stat-header">
+                <span>TOTAL SCANS ANALYZED</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              </div>
+              <div class="stat-value" id="kpiTotalScans">0</div>
+              <div class="stat-change">Persistent Relational Audit DB</div>
+            </div>
+
+            <div class="stat-card malicious">
+              <div class="stat-header">
+                <span>MALICIOUS THREATS BLOCKED</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+              </div>
+              <div class="stat-value" id="kpiMalicious">0</div>
+              <div class="stat-change" style="color: var(--color-malicious);">Immediate perimeter containment</div>
+            </div>
+
+            <div class="stat-card suspicious">
+              <div class="stat-header">
+                <span>SUSPICIOUS IN QUARANTINE</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              </div>
+              <div class="stat-value" id="kpiSuspicious">0</div>
+              <div class="stat-change" style="color: var(--color-suspicious);">Pending Tier-2 analyst triage</div>
+            </div>
+
+            <div class="stat-card safe">
+              <div class="stat-header">
+                <span>SAFE EMAILS VERIFIED</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div class="stat-value" id="kpiSafe">0</div>
+              <div class="stat-change" style="color: var(--color-safe);">SPF/DKIM/DMARC authenticated</div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Threat Verdict Distribution</h3>
+                  <span class="card-subtitle">Real-time breakdown of detected email threat categories</span>
+                </div>
+              </div>
+              <div style="height: 220px; display: flex; align-items: center; justify-content: center;" id="donutChartContainer">
+                <!-- SVG Donut Chart dynamically rendered -->
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">7-Day Threat Activity Timeline</h3>
+                  <span class="card-subtitle">Scan volumes: Safe vs Suspicious vs Malicious</span>
+                </div>
+              </div>
+              <div style="height: 220px; display: flex; align-items: center; justify-content: center;" id="timelineChartContainer">
+                <!-- SVG Timeline Chart dynamically rendered -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Test Attack Scenarios -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                1-Click Threat Simulation & Demonstration Scenarios
+              </h3>
+              <span class="card-subtitle">Select an attack payload to run instant forensic analysis</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;" id="dashboardSamplesList">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Active Incidents Preview -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                Active High-Risk Security Incidents
+              </h3>
+              <button class="btn btn-outline btn-sm" onclick="navigateTo('incidents')">View All Incidents</button>
+            </div>
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Incident ID</th>
+                    <th>Threat Title</th>
+                    <th>Severity</th>
+                    <th>Category</th>
+                    <th>Target Recipient</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="overviewIncidentsTable">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 2: EMAIL & URL SCANNER ==================== -->
+        <section id="view-scanner" class="view-section">
+          <div class="grid-2">
+            <!-- Scanner Input Card -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon></svg>
+                  Multi-Vector Email & Link Scanner
+                </h3>
+              </div>
+
+              <!-- Input Mode Tabs -->
+              <div class="tabs-nav">
+                <button class="tab-btn active" id="tabModeForm" onclick="setScanMode('form')">Structured Email</button>
+                <button class="tab-btn" id="tabModeEml" onclick="setScanMode('eml')">Raw EML / MIME Header</button>
+                <button class="tab-btn" id="tabModeUrl" onclick="setScanMode('url')">Standalone URL</button>
+              </div>
+
+              <!-- Form Mode -->
+              <form id="scannerForm" onsubmit="event.preventDefault(); executeScan();">
+                <div id="scanFormFields">
+                  <div class="grid-2">
+                    <div class="form-group">
+                      <label class="form-label">Sender Address / Display Name</label>
+                      <input type="text" class="form-input" id="scanSender" placeholder='"Microsoft Security" &lt;support@micros0ft-portal.xyz&gt;'>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Target Recipient Mailbox</label>
+                      <input type="text" class="form-input" id="scanRecipient" placeholder="cfo@victim-corp.com">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Email Subject Line</label>
+                    <input type="text" class="form-input" id="scanSubject" placeholder="URGENT: Password Expiring in 24 Hours">
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Email Body Content</label>
+                    <textarea class="form-textarea" id="scanBody" rows="5" placeholder="Paste incoming email body text with embedded links..."></textarea>
+                  </div>
+
+                  <div class="grid-2">
+                    <div class="form-group">
+                      <label class="form-label">Extracted URL / Action Link (Optional)</label>
+                      <input type="text" class="form-input" id="scanUrl" placeholder="https://micros0ft-portal.xyz/login.exe">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Observed Originating IP (Optional)</label>
+                      <input type="text" class="form-input" id="scanIp" placeholder="185.220.101.5">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Raw EML Mode -->
+                <div id="scanEmlFields" style="display: none;">
+                  <div class="form-group">
+                    <label class="form-label">Paste Raw .EML or RFC 822 Headers & Body</label>
+                    <textarea class="form-textarea" id="scanRawEml" rows="12" placeholder="Received: from mail.attacker.xyz (unknown [185.220.101.5])...&#10;From: &quot;IT Dept&quot; &lt;alert@attacker.xyz&gt;&#10;Subject: Security Update&#10;Authentication-Results: spf=fail; dkim=fail;&#10;&#10;Please verify credentials immediately..."></textarea>
+                  </div>
+                </div>
+
+                <!-- Standalone URL Mode -->
+                <div id="scanUrlFields" style="display: none;">
+                  <div class="form-group">
+                    <label class="form-label">Suspicious Target URL or Domain</label>
+                    <input type="text" class="form-input" id="scanStandaloneUrl" placeholder="https://paypaI.com/cgi-bin/webscr?cmd=_login">
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                  <button type="submit" class="btn btn-cyan" id="btnExecuteScan" style="flex-grow: 1;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    Run 6-Module Threat Assessment
+                  </button>
+                  <button type="button" class="btn btn-outline" onclick="clearScanForm()">Reset</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Scan Results Panel -->
+            <div class="card" id="scanResultContainer">
+              <div class="card-header">
+                <h3 class="card-title">Threat Assessment Verdict</h3>
+                <span id="scanResultVerdictBadge" class="badge badge-neutral">AWAITING INPUT</span>
+              </div>
+
+              <!-- Score Dial & Verdict -->
+              <div class="score-display" style="margin-bottom: 18px;">
+                <div class="score-circle safe" id="scanScoreCircle">
+                  <span id="scanScoreValue">0</span>
+                  <span class="score-circle-sub">RISK</span>
+                </div>
+                <div>
+                  <h4 style="font-size: 1.1rem; font-weight: 700;" id="scanResultHeading">No Active Scan</h4>
+                  <p style="font-size: 0.85rem; color: var(--text-secondary);" id="scanResultSummary">Select a test attack scenario from above or enter email content to run the explainable scoring engine.</p>
+                </div>
+              </div>
+
+              <!-- 6 Core Modules Breakdown -->
+              <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 12px;">Explainable Module Breakdown</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;" id="modulesBreakdownGrid">
+                <div class="card" style="margin: 0; padding: 12px; background: var(--bg-elevated);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>1. Phishing Detection</span>
+                    <strong id="mScorePhishing">0/100</strong>
+                  </div>
+                  <div class="module-progress"><div class="module-fill safe" id="mFillPhishing" style="width: 0%;"></div></div>
+                </div>
+
+                <div class="card" style="margin: 0; padding: 12px; background: var(--bg-elevated);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>2. Malicious URL</span>
+                    <strong id="mScoreUrl">0/100</strong>
+                  </div>
+                  <div class="module-progress"><div class="module-fill safe" id="mFillUrl" style="width: 0%;"></div></div>
+                </div>
+
+                <div class="card" style="margin: 0; padding: 12px; background: var(--bg-elevated);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>3. Spam & Lures</span>
+                    <strong id="mScoreSpam">0/100</strong>
+                  </div>
+                  <div class="module-progress"><div class="module-fill safe" id="mFillSpam" style="width: 0%;"></div></div>
+                </div>
+
+                <div class="card" style="margin: 0; padding: 12px; background: var(--bg-elevated);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>4. Domain Rep</span>
+                    <strong id="mScoreDomain">0/100</strong>
+                  </div>
+                  <div class="module-progress"><div class="module-fill safe" id="mFillDomain" style="width: 0%;"></div></div>
+                </div>
+
+                <div class="card" style="margin: 0; padding: 12px; background: var(--bg-elevated);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>5. IP Reputation</span>
+                    <strong id="mScoreIp">0/100</strong>
+                  </div>
+                  <div class="module-progress"><div class="module-fill safe" id="mFillIp" style="width: 0%;"></div></div>
+                </div>
+
+                <div class="card" style="margin: 0; padding: 12px; background: var(--bg-elevated);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>6. AI Risk Synthesis</span>
+                    <strong id="mScoreAi">0/100</strong>
+                  </div>
+                  <div class="module-progress"><div class="module-fill safe" id="mFillAi" style="width: 0%;"></div></div>
+                </div>
+              </div>
+
+              <!-- MITRE ATT&CK & Action Row -->
+              <div id="scanMitreContainer" style="margin-bottom: 14px; display: none;">
+                <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">MITRE ATT&CK MAPPING:</span>
+                <div id="scanMitreTags" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;"></div>
+              </div>
+
+              <!-- Response Actions -->
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-outline btn-sm" id="btnBlockSender" onclick="blockCurrentSender()" disabled>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                  Block Sender Domain
+                </button>
+                <button class="btn btn-outline btn-sm" id="btnViewDeepForensics" onclick="loadDeepForensicsFromCurrentScan()" disabled>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon></svg>
+                  Inspect Forensics & GeoIP
+                </button>
+                <button class="btn btn-outline btn-sm" id="btnExportJson" onclick="exportScanJson()" disabled>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Export JSON
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Matched Evidence & Indicators Card -->
+          <div class="card" id="scanIndicatorsCard" style="display: none;">
+            <div class="card-header">
+              <h3 class="card-title">Detailed Threat Evidence & Matched IOCs</h3>
+              <span class="card-subtitle" id="scanIndicatorCount">0 indicators flagged</span>
+            </div>
+            <div id="scanIndicatorsList"></div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 3: THREAT INTELLIGENCE ==================== -->
+        <section id="view-intel" class="view-section">
+          <!-- Lookup Tool -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                IOC & Brand Impersonation Intelligence Resolver
+              </h3>
+              <span class="card-subtitle">Query domain, IP, homoglyph typosquatting, or SHA256 hash</span>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+              <input type="text" class="form-input" id="intelLookupInput" placeholder="Enter suspicious domain (e.g. micros0ft.com, paypaI.com) or IP (185.220.101.5)...">
+              <button class="btn btn-cyan" onclick="performIntelLookup()">Investigate IOC</button>
+            </div>
+            <div id="intelLookupResult" style="display: none;"></div>
+          </div>
+
+          <!-- Active Threat Feed -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Active Aegis Global IOC Threat Feed</h3>
+              <span class="badge badge-neutral">LIVE STREAM</span>
+            </div>
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>IOC Indicator Value</th>
+                    <th>Threat Classification</th>
+                    <th>Confidence</th>
+                    <th>Threat Actor / Campaign</th>
+                    <th>Tags</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="intelFeedTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 4: FORENSIC INVESTIGATION ==================== -->
+        <section id="view-forensics" class="view-section">
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon></svg>
+                Select Scan for Deep Forensic Audit
+              </h3>
+              <select class="form-select" id="forensicScanSelector" style="max-width: 380px;" onchange="loadForensicScan(this.value)">
+                <!-- Options populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Forensic Top Stats -->
+          <div class="grid-3">
+            <div class="card">
+              <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">ORIGINATING IP GEOLOCATION</h4>
+              <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);" id="fGeoLocation">Unknown</div>
+              <div style="font-size: 0.8rem; color: var(--cyan-accent); margin-top: 4px;" id="fGeoIsp">ISP / ASN: Pending</div>
+              <div style="margin-top: 8px;" id="fGeoFlags"></div>
+            </div>
+
+            <div class="card">
+              <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">EMAIL AUTHENTICATION (SPF/DKIM/DMARC)</h4>
+              <div style="display: flex; gap: 8px; margin-top: 8px;" id="fAuthBadges">
+                <span class="badge badge-neutral">SPF: --</span>
+                <span class="badge badge-neutral">DKIM: --</span>
+                <span class="badge badge-neutral">DMARC: --</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px;" id="fAuthDetail">Evaluating cryptographic signatures...</div>
+            </div>
+
+            <div class="card">
+              <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">DOMAIN WHOIS & REPUTATION</h4>
+              <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);" id="fDomainAge">-- Days Old</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;" id="fDomainRegistrar">Registrar: --</div>
+              <div style="font-size: 0.8rem; color: var(--primary-blue); margin-top: 4px;" id="fDomainMx">MX Record: --</div>
+            </div>
+          </div>
+
+          <!-- Geolocation World Map Visualizer -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Forensic Origin Geolocation Radar</h3>
+              <span class="card-subtitle" id="fMapSubtitle">Coordinates: Lat/Lng</span>
+            </div>
+            <div style="height: 300px; background: #1c2737; border-radius: 6px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;" id="geoMapCanvas">
+              <!-- Rendered SVG interactive world projection with target coordinates & pulse -->
+            </div>
+          </div>
+
+          <!-- Hop-by-Hop Mail Relay Tracer -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Hop-by-Hop MTA Received Chain Tracer</h3>
+              <span class="card-subtitle">RFC 5321 transit path from initial sender to final mailbox gateway</span>
+            </div>
+            <div id="fHopList">
+              <p style="color: var(--text-secondary); font-size: 0.85rem;">Select a scan above to visualize the relay hop trajectory.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 5: ALERTS & INCIDENTS ==================== -->
+        <section id="view-incidents" class="view-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                SOC Security Incident Queue & Triage Management
+              </h3>
+              <div style="display: flex; gap: 8px;">
+                <select class="form-select" id="filterIncidentStatus" style="width: 140px;" onchange="loadIncidents()">
+                  <option value="">All Statuses</option>
+                  <option value="New">New</option>
+                  <option value="Investigating">Investigating</option>
+                  <option value="Mitigated">Mitigated</option>
+                  <option value="False Positive">False Positive</option>
+                </select>
+                <select class="form-select" id="filterIncidentSeverity" style="width: 140px;" onchange="loadIncidents()">
+                  <option value="">All Severities</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Incident ID</th>
+                    <th>Created</th>
+                    <th>Title</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Target Recipient</th>
+                    <th>Offending Domain / IP</th>
+                    <th>Analyst</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="incidentsTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 6: SCAN HISTORY ==================== -->
+        <section id="view-history" class="view-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Persistent Scan History & Audit Records</h3>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" class="form-input" id="historySearchInput" placeholder="Search sender, subject, UUID..." style="width: 240px;" onkeyup="loadScanHistory()">
+                <select class="form-select" id="historyVerdictFilter" style="width: 140px;" onchange="loadScanHistory()">
+                  <option value="">All Verdicts</option>
+                  <option value="Malicious">Malicious</option>
+                  <option value="Suspicious">Suspicious</option>
+                  <option value="Safe">Safe</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="exportHistoryCsv()">Export JSON</button>
+              </div>
+            </div>
+
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>UUID</th>
+                    <th>Timestamp</th>
+                    <th>Sender Address</th>
+                    <th>Subject Line</th>
+                    <th>Risk Score</th>
+                    <th>Verdict</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 7: VPN & TRAFFIC MONITOR ==================== -->
+        <section id="view-vpn" class="view-section">
+          <div class="stat-grid">
+            <div class="stat-card primary">
+              <div class="stat-header"><span>ACTIVE VPN TUNNELS</span></div>
+              <div class="stat-value" id="vpnTotalTunnels">5</div>
+              <div class="stat-change">WireGuard / IPsec Mesh</div>
+            </div>
+            <div class="stat-card malicious">
+              <div class="stat-header"><span>NETWORK ANOMALIES</span></div>
+              <div class="stat-value" id="vpnAnomalies">2</div>
+              <div class="stat-change" style="color: var(--color-malicious);">Suspicious outbound beacons</div>
+            </div>
+            <div class="stat-card safe">
+              <div class="stat-header"><span>TOTAL BANDWIDTH (MB)</span></div>
+              <div class="stat-value" id="vpnBandwidth">14.2 MB</div>
+              <div class="stat-change" style="color: var(--color-safe);">Encrypted egress inspection</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Network Session Monitor & Anomaly Detection</h3>
+              <button class="btn btn-cyan btn-sm" onclick="simulateVpnProbe()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                Inject Synthetic Anomaly Probe
+              </button>
+            </div>
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Tunnel ID</th>
+                    <th>Client IP</th>
+                    <th>Destination IP / Domain</th>
+                    <th>Port</th>
+                    <th>Traffic (In / Out)</th>
+                    <th>Threat Score</th>
+                    <th>Status</th>
+                    <th>Forensic Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="vpnTrafficTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 8: SETTINGS & CONNECTOR ==================== -->
+        <section id="view-settings" class="view-section">
+          <div class="grid-2">
+            <!-- Detection Tuning -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Threat Detection Thresholds & Automation</h3>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Malicious Threshold (Score 0 - 100)</label>
+                <input type="number" class="form-input" id="settingMaliciousThreshold" value="70">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Suspicious Threshold (Score 0 - 100)</label>
+                <input type="number" class="form-input" id="settingSuspiciousThreshold" value="40">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Auto-Quarantine on Malicious Detection</label>
+                <select class="form-select" id="settingAutoQuarantine">
+                  <option value="true">Enabled (Recommended)</option>
+                  <option value="false">Disabled (Monitor Only)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="saveSettings()">Save Configuration</button>
+            </div>
+
+            <!-- IMAP Mailbox Connector -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Inbound IMAP / Stream Integration</h3>
+              </div>
+              <div class="form-group">
+                <label class="form-label">IMAP Mail Host / Port</label>
+                <input type="text" class="form-input" id="settingImapHost" value="imap.sec-enterprise.com:993">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Monitored Mailbox User</label>
+                <input type="text" class="form-input" id="settingImapUser" value="soc-ingest@sec-enterprise.com">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Connection Status</label>
+                <input type="text" class="form-input" value="Connected - Active TLS Stream" disabled style="color: var(--color-safe);">
+              </div>
+              <button class="btn btn-cyan" onclick="testImapConnection()">Test Stream Pipeline</button>
+            </div>
+          </div>
+
+          <!-- Perimeter Blocklist Table -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Perimeter Blocklist (Domains & IPs)</h3>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" class="form-input" id="newBlockValue" placeholder="domain.com or 1.2.3.4" style="width: 220px;">
+                <select class="form-select" id="newBlockType" style="width: 120px;">
+                  <option value="domain">Domain</option>
+                  <option value="ip">IP Address</option>
+                </select>
+                <button class="btn btn-cyan btn-sm" onclick="addNewBlockEntry()">Add Block</button>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Blocked Value</th>
+                    <th>Reason</th>
+                    <th>Added Date</th>
+                    <th>Added By</th>
+                    <th>Enabled</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="blocklistTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Incident Details & Triage Modal -->
+  <div class="modal-overlay" id="incidentModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="card-title" id="mIncidentTitle">Incident Triage Dossier</h3>
+        <button class="collapse-btn" onclick="closeIncidentModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="grid-2" style="margin-bottom: 16px;">
+          <div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">INCIDENT ID</p>
+            <h4 id="mIncidentId" style="font-family: var(--font-mono);">INC-0000</h4>
+          </div>
+          <div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">SEVERITY</p>
+            <span id="mIncidentSeverityBadge" class="badge badge-malicious">CRITICAL</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Triage Status</label>
+          <select class="form-select" id="mIncidentStatusSelect">
+            <option value="New">New</option>
+            <option value="Investigating">Investigating</option>
+            <option value="Mitigated">Mitigated</option>
+            <option value="False Positive">False Positive</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Analyst Triage & Mitigation Notes</label>
+          <textarea class="form-textarea" id="mIncidentNotes" rows="5"></textarea>
+        </div>
+
+        <div id="mIncidentOffenderBox" style="background: var(--bg-elevated); padding: 12px; border-radius: 6px; font-size: 0.82rem; margin-bottom: 12px;">
+          <strong>Offender:</strong> <span id="mIncidentOffender">--</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeIncidentModal()">Cancel</button>
+        <button class="btn btn-danger" id="mBtnBlockOffender" onclick="blockIncidentOffender()">Block Offending Domain/IP</button>
+        <button class="btn btn-cyan" onclick="saveIncidentTriage()">Save Triage Updates</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Scan Dossier Modal -->
+  <div class="modal-overlay" id="scanDossierModal">
+    <div class="modal-dialog" style="max-width: 900px;">
+      <div class="modal-header">
+        <h3 class="card-title" id="dossierTitle">Forensic Dossier</h3>
+        <button class="collapse-btn" onclick="closeDossierModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="dossierContent">
+        <!-- Injected dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeDossierModal()">Close</button>
+        <button class="btn btn-cyan" onclick="printDossier()">Print / Export Dossier</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
