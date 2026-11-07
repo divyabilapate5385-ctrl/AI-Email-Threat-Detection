@@ -17,13 +17,19 @@ const state = {
   settings: {},
   currentScanResult: null,
   activeIncident: null,
-  scanMode: 'form' // 'form' | 'eml' | 'url'
+  scanMode: 'form', // 'form' | 'eml' | 'url' | 'upload'
+  selectedFiles: {
+    scanner: null,
+    page: null
+  },
+  lastSenderGeo: null
 };
 
 // Initialization on DOM Load
 document.addEventListener('DOMContentLoaded', async () => {
   setupNavigation();
   setupSidebarToggle();
+  setupFileDropzones();
   await loadAllData();
   setupTickerAnimation();
 });
@@ -69,6 +75,8 @@ function navigateTo(viewId) {
   const titles = {
     overview: 'SOC Overview Dashboard',
     scanner: 'Email & URL Threat Scanner',
+    'file-analysis': 'Email File Forensic Analysis',
+    'sender-geo': 'Sender Geolocation Intelligence',
     intel: 'Threat Intelligence & IOC Resolver',
     forensics: 'Forensic Investigation & Geolocation',
     incidents: 'Alerts & Incident Response Queue',
@@ -368,14 +376,19 @@ function setScanMode(mode) {
   document.getElementById('tabModeForm').classList.toggle('active', mode === 'form');
   document.getElementById('tabModeEml').classList.toggle('active', mode === 'eml');
   document.getElementById('tabModeUrl').classList.toggle('active', mode === 'url');
+  const uploadTab = document.getElementById('tabModeUpload');
+  if (uploadTab) uploadTab.classList.toggle('active', mode === 'upload');
 
   document.getElementById('scanFormFields').style.display = mode === 'form' ? 'block' : 'none';
   document.getElementById('scanEmlFields').style.display = mode === 'eml' ? 'block' : 'none';
   document.getElementById('scanUrlFields').style.display = mode === 'url' ? 'block' : 'none';
+  const uploadFields = document.getElementById('scanUploadFields');
+  if (uploadFields) uploadFields.style.display = mode === 'upload' ? 'block' : 'none';
 }
 
 function clearScanForm() {
   document.getElementById('scannerForm').reset();
+  removeSelectedFile('scanner');
   setScanMode('form');
 }
 
@@ -384,6 +397,20 @@ async function executeScan() {
   const btn = document.getElementById('btnExecuteScan');
   btn.disabled = true;
   btn.innerHTML = `<span class="ticker-pulse"></span> Analyzing Threat Vectors...`;
+
+  if (state.scanMode === 'upload') {
+    if (state.selectedFiles.scanner) {
+      await executeFileAnalysis('scanner');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Run 6-Module Threat Assessment`;
+      return;
+    } else {
+      alert('Please select an email file (.eml, .msg, .pdf, .txt) first.');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Run 6-Module Threat Assessment`;
+      return;
+    }
+  }
 
   let payload = {};
   if (state.scanMode === 'form') {
@@ -715,16 +742,18 @@ function loadForensicScan(scanId) {
   renderHopTracer(hops);
 }
 
-function renderGeoMap(lat, lng, country, ip, countryFlag = '🌐', city = '', isp = '', localTime = '') {
-  const canvas = document.getElementById('geoMapCanvas');
-  const sub = document.getElementById('fMapSubtitle');
+function renderGeoMap(lat, lng, country, ip, countryFlag = '🌐', city = '', isp = '', localTime = '', targetContainerId = 'geoMapCanvas', subtitleId = 'fMapSubtitle') {
+  const canvas = document.getElementById(targetContainerId);
+  const sub = document.getElementById(subtitleId);
   if (!canvas) return;
 
   const validLat = Number(lat) || 0;
   const validLng = Number(lng) || 0;
   const flag = countryFlag || '🌐';
   const cityStr = city ? `${city}, ` : '';
-  sub.textContent = `Coordinates: ${validLat.toFixed(4)}° N, ${validLng.toFixed(4)}° E | Tracked Sender Origin: ${flag} ${cityStr}${country} (Host: ${ip})`;
+  if (sub) {
+    sub.textContent = `Coordinates: ${validLat.toFixed(4)}° N, ${validLng.toFixed(4)}° E | Tracked Sender Origin: ${flag} ${cityStr}${country} (Host: ${ip})`;
+  }
 
   // Convert lat/lng to roughly 600 x 300 SVG projection
   const x = Math.round((validLng + 180) * (600 / 360));
@@ -1317,4 +1346,493 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+/* ========================================================
+   FILE UPLOAD & MOBILE CHOOSER ENGINE
+   ======================================================== */
+
+function setupFileDropzones() {
+  const dropzones = [
+    { el: document.getElementById('scannerDropzone'), context: 'scanner' },
+    { el: document.getElementById('filePageDropzone'), context: 'page' }
+  ];
+
+  dropzones.forEach(({ el, context }) => {
+    if (!el) return;
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      el.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      el.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.remove('dragover');
+      }, false);
+    });
+
+    el.addEventListener('drop', e => {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        processFileSelection(dt.files[0], context);
+      }
+    }, false);
+  });
+}
+
+function triggerFileInput(inputId) {
+  const el = document.getElementById(inputId);
+  if (el) el.click();
+}
+
+function handleFileSelected(inputEl, context) {
+  if (inputEl && inputEl.files && inputEl.files.length > 0) {
+    processFileSelection(inputEl.files[0], context);
+  }
+}
+
+function processFileSelection(file, context) {
+  if (!file) return;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  const blockedExts = ['exe', 'dll', 'bat', 'cmd', 'scr', 'vbs', 'js', 'wsf', 'hta', 'ps1', 'msi', 'com', 'pif', 'cpl'];
+
+  if (blockedExts.includes(ext)) {
+    alert(`Executable or script file (.${ext}) blocked for security reasons. Please upload an email file (.eml, .msg, .txt, .pdf).`);
+    return;
+  }
+
+  // 10MB limit
+  if (file.size > 10 * 1024 * 1024) {
+    alert(`File size exceeds 10MB maximum limit (${(file.size / (1024 * 1024)).toFixed(2)} MB).`);
+    return;
+  }
+
+  state.selectedFiles[context] = file;
+
+  const sizeKb = (file.size / 1024).toFixed(1);
+
+  if (context === 'scanner') {
+    const selBox = document.getElementById('scannerFileSelected');
+    if (selBox) selBox.style.display = 'flex';
+    const nameEl = document.getElementById('scannerFileName');
+    if (nameEl) nameEl.textContent = file.name;
+    const sizeEl = document.getElementById('scannerFileSize');
+    if (sizeEl) sizeEl.textContent = `${sizeKb} KB | Format: ${ext.toUpperCase()}`;
+    // Run upload scan automatically
+    executeFileAnalysis('scanner');
+  } else {
+    const selBox = document.getElementById('filePageSelected');
+    if (selBox) selBox.style.display = 'flex';
+    const nameEl = document.getElementById('filePageName');
+    if (nameEl) nameEl.textContent = file.name;
+    const metaEl = document.getElementById('filePageMeta');
+    if (metaEl) metaEl.textContent = `Size: ${sizeKb} KB | Format: ${ext.toUpperCase()} | Ready for Forensic Analysis`;
+    // Run upload scan automatically
+    executeFileAnalysis('page');
+  }
+}
+
+function removeSelectedFile(context) {
+  state.selectedFiles[context] = null;
+  if (context === 'scanner') {
+    const input = document.getElementById('scannerFileInput');
+    if (input) input.value = '';
+    const selBox = document.getElementById('scannerFileSelected');
+    if (selBox) selBox.style.display = 'none';
+    const progWrap = document.getElementById('scannerProgressWrap');
+    if (progWrap) progWrap.style.display = 'none';
+  } else {
+    const input = document.getElementById('filePageInput');
+    if (input) input.value = '';
+    const selBox = document.getElementById('filePageSelected');
+    if (selBox) selBox.style.display = 'none';
+    const progWrap = document.getElementById('filePageProgressWrap');
+    if (progWrap) progWrap.style.display = 'none';
+    const resBox = document.getElementById('fileAnalysisResults');
+    if (resBox) resBox.style.display = 'none';
+  }
+}
+
+async function executeFileAnalysis(context) {
+  const file = state.selectedFiles[context];
+  if (!file) {
+    alert('Please select an email file (.eml, .msg, .pdf, .txt) first.');
+    return;
+  }
+
+  const pWrap = document.getElementById(context === 'scanner' ? 'scannerProgressWrap' : 'filePageProgressWrap');
+  const pBar = document.getElementById(context === 'scanner' ? 'scannerProgressBar' : 'filePageProgressBar');
+  const pStatus = document.getElementById(context === 'scanner' ? 'scannerUploadStatus' : 'filePageUploadStatus');
+
+  if (pWrap) pWrap.style.display = 'block';
+  if (pBar) pBar.style.width = '25%';
+  if (pStatus) {
+    pStatus.style.display = 'block';
+    pStatus.textContent = 'Reading email stream from device storage...';
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async () => {
+    try {
+      if (pBar) pBar.style.width = '65%';
+      if (pStatus) pStatus.textContent = 'Disassembling RFC headers, attachments, and URLs...';
+
+      const payload = {
+        filename: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        isBase64: true,
+        base64Content: reader.result
+      };
+
+      const res = await fetch('/api/file/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'File analysis failed.');
+      }
+
+      if (pBar) pBar.style.width = '100%';
+      if (pStatus) pStatus.textContent = 'Analysis complete! Rendering forensics...';
+
+      setTimeout(() => {
+        if (pWrap) pWrap.style.display = 'none';
+        if (pStatus) pStatus.style.display = 'none';
+        if (pBar) pBar.style.width = '0%';
+      }, 700);
+
+      state.lastFileAnalysis = data;
+      state.lastSenderGeo = data.senderLocation;
+
+      if (context === 'page') {
+        renderFileAnalysisResults(data);
+      } else {
+        state.currentScanResult = data;
+        renderScanResult(data.analysis);
+      }
+
+      // Refresh overview stats and audit records
+      loadStats();
+      loadScans();
+
+    } catch (err) {
+      if (pWrap) pWrap.style.display = 'none';
+      if (pStatus) pStatus.style.display = 'none';
+      alert(`Upload Analysis Error: ${err.message}`);
+    }
+  };
+
+  reader.onerror = () => {
+    if (pWrap) pWrap.style.display = 'none';
+    if (pStatus) pStatus.style.display = 'none';
+    alert('Failed to read file from local device storage.');
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function renderFileAnalysisResults(data) {
+  const container = document.getElementById('fileAnalysisResults');
+  if (!container) return;
+  container.style.display = 'block';
+
+  const { analysis, attachments, senderLocation, fileMetadata } = data;
+  const score = analysis.overallScore;
+  const verdict = analysis.verdict;
+
+  // Score & Verdict
+  const scoreVal = document.getElementById('fileScoreValue');
+  const scoreCircle = document.getElementById('fileScoreCircle');
+  const verdictBadge = document.getElementById('fileVerdictBadge');
+  const heading = document.getElementById('fileResultHeading');
+  const summary = document.getElementById('fileResultSummary');
+
+  if (scoreVal) scoreVal.textContent = score;
+  if (scoreCircle) scoreCircle.className = `score-circle ${verdict.toLowerCase()}`;
+  if (verdictBadge) {
+    verdictBadge.textContent = verdict.toUpperCase();
+    verdictBadge.className = `badge badge-${verdict.toLowerCase()}`;
+  }
+  if (heading) heading.textContent = `${verdict} Verdict (Threat Score: ${score}/100)`;
+  if (summary) summary.textContent = analysis.explanation;
+
+  // Sender Geolocation Snapshot
+  const loc = senderLocation || analysis.forensicData.senderLocation || {};
+  const flag = loc.countryFlag || '🌐';
+  const city = loc.city || 'Unknown City';
+  const country = loc.country || 'Unknown Country';
+  const lat = loc.latitude !== undefined ? Number(loc.latitude).toFixed(4) : '0.0000';
+  const lng = loc.longitude !== undefined ? Number(loc.longitude).toFixed(4) : '0.0000';
+
+  const sBadge = document.getElementById('fileSenderCountryBadge');
+  if (sBadge) sBadge.textContent = `${flag} ${country.toUpperCase()}`;
+  const sCity = document.getElementById('fileSenderCityCountry');
+  if (sCity) sCity.textContent = `${flag} ${city}, ${country}`;
+  const sIsp = document.getElementById('fileSenderIsp');
+  if (sIsp) sIsp.textContent = `ISP: ${loc.isp || 'Commercial Transit'} | ${loc.asn || 'AS0'}`;
+  const sCoords = document.getElementById('fileSenderCoords');
+  if (sCoords) sCoords.textContent = `Coordinates: ${lat}° N, ${lng}° E | Local Time: ${loc.localTime || '--'}`;
+
+  // Email Metadata
+  const pe = analysis.parsedEmail || {};
+  document.getElementById('fileMetaSender').textContent = pe.from ? `${pe.from.name ? '"' + pe.from.name + '" ' : ''}<${pe.from.address || '--'}>` : '--';
+  document.getElementById('fileMetaRecipient').textContent = pe.to ? pe.to.address || '--' : '--';
+  document.getElementById('fileMetaSubject').textContent = pe.subject || 'No Subject';
+  document.getElementById('fileMetaDate').textContent = pe.date || '--';
+  document.getElementById('fileMetaIp').textContent = loc.ip || analysis.forensicData.originatingIp || '--';
+
+  // Auth Badges
+  const auth = analysis.forensicData.authentication || {};
+  const authEl = document.getElementById('fileMetaAuthBadges');
+  if (authEl) {
+    authEl.innerHTML = `
+      <span class="badge ${auth.spf === 'pass' ? 'badge-safe' : auth.spf === 'fail' ? 'badge-malicious' : 'badge-neutral'}">SPF: ${(auth.spf || 'neutral').toUpperCase()}</span>
+      <span class="badge ${auth.dkim === 'pass' ? 'badge-safe' : auth.dkim === 'fail' ? 'badge-malicious' : 'badge-neutral'}">DKIM: ${(auth.dkim || 'neutral').toUpperCase()}</span>
+      <span class="badge ${auth.dmarc === 'pass' ? 'badge-safe' : auth.dmarc === 'fail' ? 'badge-malicious' : 'badge-neutral'}">DMARC: ${(auth.dmarc || 'neutral').toUpperCase()}</span>
+    `;
+  }
+
+  // Attachments List
+  const attCountBadge = document.getElementById('fileAttachmentCountBadge');
+  const attList = document.getElementById('fileAttachmentsList');
+  const atts = attachments || [];
+
+  if (attCountBadge) attCountBadge.textContent = `${atts.length} Attachment${atts.length === 1 ? '' : 's'}`;
+
+  if (attList) {
+    if (atts.length === 0) {
+      attList.innerHTML = '<p style="font-size: 0.85rem; color: var(--text-secondary);">No attached binary payloads detected in this message stream.</p>';
+    } else {
+      attList.innerHTML = atts.map(a => {
+        const badgeClass = a.severity === 'Malicious' ? 'badge-malicious' : a.severity === 'Suspicious' ? 'badge-suspicious' : 'badge-safe';
+        return `
+          <div class="attachment-item-row">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: ${a.severity === 'Malicious' ? 'var(--malicious)' : 'var(--cyan-accent)'};">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+              </svg>
+              <div>
+                <strong style="color: var(--text-main); font-size: 0.88rem;">${escapeHtml(a.filename)}</strong>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(a.reason || 'Attachment inspection')}</div>
+              </div>
+            </div>
+            <span class="badge ${badgeClass}">${a.risk.toUpperCase()} RISK</span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Embedded URLs
+  const urlsList = document.getElementById('fileUrlsList');
+  if (urlsList) {
+    const urls = pe.urls || [];
+    if (urls.length === 0) {
+      urlsList.innerHTML = '<span style="color: var(--text-secondary);">No hyperlinks embedded in email content.</span>';
+    } else {
+      urlsList.innerHTML = `
+        <div style="margin-bottom: 6px; font-weight: 600; color: var(--text-secondary);">Embedded URLs (${urls.length}):</div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          ${urls.map(u => `<div style="font-family: monospace; color: var(--cyan-accent); font-size: 0.8rem; word-break: break-all;">🔗 ${escapeHtml(u)}</div>`).join('')}
+        </div>
+      `;
+    }
+  }
+
+  // Threat Indicators
+  const indList = document.getElementById('fileIndicatorsList');
+  if (indList) {
+    if (analysis.threatIndicators.length === 0) {
+      indList.innerHTML = '<span style="color: var(--color-safe); font-size: 0.85rem;">No threat indicators flagged.</span>';
+    } else {
+      indList.innerHTML = analysis.threatIndicators.map(i => `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #26364a; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem;">
+          <span style="color: var(--text-main);">${escapeHtml(i.label || i.detail || 'Indicator')}</span>
+          <span class="badge ${i.severity === 'Critical' ? 'badge-malicious' : i.severity === 'High' ? 'badge-suspicious' : 'badge-neutral'}">${escapeHtml(i.module)} (${escapeHtml(i.severity)})</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  container.scrollIntoView({ behavior: 'smooth' });
+}
+
+function loadSampleFileThreat(type) {
+  let samplePayload = {};
+
+  if (type === 'm365') {
+    samplePayload = {
+      filename: 'M365_Security_Alert.eml',
+      mimeType: 'message/rfc822',
+      content: `Received: from mail.micros0ft-portal.xyz (unknown [185.220.101.5]) by mx.target-corp.com; Fri, 06 Nov 2026 14:00:00 -0000
+From: "Microsoft Security Team" <support@micros0ft-portal.xyz>
+To: target-analyst@corp.com
+Subject: URGENT: Office 365 Password Expiration Alert
+Date: Fri, 06 Nov 2026 14:00:00 -0000
+Authentication-Results: spf=fail; dkim=fail; dmarc=fail;
+Content-Type: text/plain; charset=utf-8
+
+Your Microsoft 365 password expires in 2 hours.
+Please verify your corporate credentials immediately:
+https://micros0ft-portal.xyz/login.exe`
+    };
+  } else if (type === 'docusign') {
+    samplePayload = {
+      filename: 'DocuSign_Overdue_Invoice.msg',
+      mimeType: 'application/vnd.ms-outlook',
+      content: `From: "DocuSign System" <invoicing@malware-dropper.net>
+Subject: Complete with DocuSign: Overdue Commercial Invoice #88291
+Content-Disposition: attachment; filename="Invoice_Payload.exe"
+Content-Type: application/octet-stream; name="Invoice_Payload.exe"
+
+Please review and sign the attached executable invoice to authorize fund release:
+http://malware-dropper.net/download/payload.exe`
+    };
+  } else if (type === 'invoice_pdf') {
+    samplePayload = {
+      filename: 'Scanned_Receipt_Invoice.pdf',
+      mimeType: 'application/pdf',
+      content: `%PDF-1.4
+/Type /Catalog /Pages 1 0 R
+/OpenAction [ 2 0 R /Fit ]
+From: billing@invoice-scam.xyz
+To: finance@corp.com
+Subject: Overdue Corporate Remittance Notice #44120
+Date: Fri, 06 Nov 2026 11:30:00 GMT
+Received IP: 194.26.29.112
+Please click here to verify the payment receipt: http://invoice-scam.xyz/verify-wire.php
+%%EOF`
+    };
+  } else {
+    samplePayload = {
+      filename: 'Clean_Google_Digest.eml',
+      mimeType: 'message/rfc822',
+      content: `Received: from mail-relay.google.com (unknown [209.85.220.41]) by mx.target-corp.com; Fri, 06 Nov 2026 10:00:00 -0000
+From: "Google Workspace" <workspace-alerts@google.com>
+To: admin@corp.com
+Subject: Weekly Admin Security Summary & Audit Log
+Date: Fri, 06 Nov 2026 10:00:00 -0000
+Authentication-Results: spf=pass; dkim=pass; dmarc=pass;
+Content-Type: text/plain; charset=utf-8
+
+All workspace security parameters verified. 0 threats detected in your domain.`
+    };
+  }
+
+  // Set file into state
+  const mockFile = new File([samplePayload.content], samplePayload.filename, { type: samplePayload.mimeType });
+  state.selectedFiles['page'] = mockFile;
+
+  // Show file selected card
+  const selBox = document.getElementById('filePageSelected');
+  if (selBox) selBox.style.display = 'flex';
+  const nameEl = document.getElementById('filePageName');
+  if (nameEl) nameEl.textContent = samplePayload.filename;
+  const metaEl = document.getElementById('filePageMeta');
+  if (metaEl) metaEl.textContent = `Size: ${(samplePayload.content.length / 1024).toFixed(1)} KB | Demo Sample Loaded`;
+
+  // Trigger analysis
+  executeFileAnalysis('page');
+}
+
+/* ========================================================
+   SENDER GEOLOCATION INTELLIGENCE ENGINE
+   ======================================================== */
+
+async function executeSenderGeoLookup() {
+  const inputEl = document.getElementById('senderGeoSearchInput');
+  const query = (inputEl ? inputEl.value : '').trim();
+
+  if (!query) {
+    alert('Please enter a sender email address, domain, or IP address.');
+    return;
+  }
+
+  const sub = document.getElementById('geoRadarSubtitle');
+  if (sub) sub.textContent = `Resolving sender origin coordinates for "${query}"...`;
+
+  try {
+    const res = await fetch(`/api/track/sender?query=${encodeURIComponent(query)}`);
+    const data = await res.json();
+
+    if (!data.success || !data.senderLocation) {
+      alert(data.error || 'Could not resolve sender location.');
+      return;
+    }
+
+    const loc = data.senderLocation;
+    const flag = loc.countryFlag || '🌐';
+
+    // 1. IP
+    document.getElementById('geoCellIp').textContent = loc.ip || '--';
+
+    // 2. Country
+    document.getElementById('geoCellCountry').textContent = `${flag} ${loc.country || 'Unknown'}`;
+
+    // 3. State/Region
+    document.getElementById('geoCellRegion').textContent = loc.region || loc.city || '--';
+
+    // 4. City
+    document.getElementById('geoCellCity').textContent = loc.city || 'Unknown City';
+
+    // 5. ISP
+    document.getElementById('geoCellIsp').textContent = loc.isp || 'Commercial Transit';
+
+    // 6. ASN
+    document.getElementById('geoCellAsn').textContent = `${loc.asn || 'AS0'} (${loc.asName || 'Unknown Network'})`;
+
+    // 7. Coordinates
+    const lat = loc.latitude !== undefined ? Number(loc.latitude).toFixed(4) : '0.0000';
+    const lng = loc.longitude !== undefined ? Number(loc.longitude).toFixed(4) : '0.0000';
+    document.getElementById('geoCellCoords').textContent = `${lat}° N, ${lng}° E`;
+
+    // 8. Anonymity / Relay Detection
+    let anonBadges = '';
+    if (loc.isTor) anonBadges += '<span class="badge badge-malicious" style="margin-right: 4px;">TOR EXIT RELAY</span>';
+    if (loc.isVpn) anonBadges += '<span class="badge badge-suspicious" style="margin-right: 4px;">COMMERCIAL VPN</span>';
+    if (loc.isProxy) anonBadges += '<span class="badge badge-suspicious">WEB PROXY</span>';
+    document.getElementById('geoCellAnonymity').innerHTML = anonBadges || '<span class="badge badge-safe">STANDARD SENDER GATEWAY</span>';
+
+    // 9. IP Reputation & Risk Level
+    const threatScore = loc.threatScore || 0;
+    const riskBadge = threatScore >= 70 ? 'badge-malicious' : threatScore >= 40 ? 'badge-suspicious' : 'badge-safe';
+    document.getElementById('geoCellRisk').innerHTML = `
+      <span class="badge ${riskBadge}">${threatScore}/100 - ${escapeHtml(loc.threatCategory || 'Safe')}</span>
+    `;
+
+    // Render interactive SVG radar map
+    renderGeoMap(loc.latitude || 0, loc.longitude || 0, loc.country || 'Unknown', loc.ip || '127.0.0.1', flag, loc.city || '', loc.isp || '', loc.localTime || '', 'senderGeoMapContainer', 'geoRadarSubtitle');
+
+  } catch (err) {
+    alert(`Sender Geolocation Lookup Error: ${err.message}`);
+  }
+}
+
+function lookupGeoPreset(query) {
+  const inputEl = document.getElementById('senderGeoSearchInput');
+  if (inputEl) inputEl.value = query;
+  executeSenderGeoLookup();
+}
+
+function navigateToSenderGeoFromAnalysis() {
+  const loc = state.lastSenderGeo;
+  navigateTo('sender-geo');
+  if (loc) {
+    const q = loc.senderEmail || loc.ip || loc.senderDomain || '';
+    const inputEl = document.getElementById('senderGeoSearchInput');
+    if (inputEl) inputEl.value = q;
+    executeSenderGeoLookup();
+  }
 }

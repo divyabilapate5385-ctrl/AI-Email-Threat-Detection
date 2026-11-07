@@ -436,9 +436,11 @@ function scoreAiRiskSynthesis(phishing, url, spam, domain, ip, parsedEmail) {
 }
 
 function analyzeThreat(input) {
-  // Support both raw EML text and structured inputs
+  // Support both raw EML text, pre-parsed file objects, and structured inputs
   let parsedEmail;
-  if (typeof input === 'string') {
+  if (input && input.isParsedFile && input.parsedEmail) {
+    parsedEmail = input.parsedEmail;
+  } else if (typeof input === 'string') {
     parsedEmail = parseEmlContent(input);
   } else if (input && input.rawEml) {
     parsedEmail = parseEmlContent(input.rawEml);
@@ -457,8 +459,37 @@ function analyzeThreat(input) {
     }
   }
 
+  // Preserve attachments if attached to input
+  if (input && input.attachments && (!parsedEmail.attachments || parsedEmail.attachments.length === 0)) {
+    parsedEmail.attachments = input.attachments;
+  }
+
   // 1. Phishing Detection Module
   const phishing = scorePhishingModule(parsedEmail);
+
+  // Evaluate Attachment Threats
+  const attachments = (parsedEmail && parsedEmail.attachments) || (input && input.attachments) || [];
+  for (const att of attachments) {
+    if (att.risk === 'Critical' || att.severity === 'Malicious') {
+      phishing.indicators.push({
+        module: 'Attachment Analysis',
+        severity: 'Critical',
+        label: `High-Risk Executable Attachment (${att.filename})`,
+        weight: 40,
+        detail: att.reason || 'Dangerous attachment payload detected'
+      });
+      phishing.score = Math.min(100, phishing.score + 40);
+    } else if (att.risk === 'High' || att.severity === 'Suspicious') {
+      phishing.indicators.push({
+        module: 'Attachment Analysis',
+        severity: 'High',
+        label: `Suspicious Macro/Archive Attachment (${att.filename})`,
+        weight: 25,
+        detail: att.reason || 'Potential weaponized attachment detected'
+      });
+      phishing.score = Math.min(100, phishing.score + 25);
+    }
+  }
 
   // 2. Malicious URL Detection Module
   const url = scoreUrlModule(parsedEmail);
@@ -508,7 +539,9 @@ function analyzeThreat(input) {
       domainIntelligence: domain.domainIntel,
       receivedHops: parsedEmail.receivedHops,
       authentication: parsedEmail.authSummary,
-      headerAnomalies: parsedEmail.headerAnomalies
+      headerAnomalies: parsedEmail.headerAnomalies,
+      attachments,
+      fileMetadata: parsedEmail.fileMetadata || input.fileMetadata || null
     },
     explanation: ai.explanation,
     recommendations: ai.recommendations

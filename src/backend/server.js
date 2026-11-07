@@ -13,6 +13,7 @@ const { ScansRepo, IncidentsRepo, BlocklistRepo, ThreatIntelRepo, VpnRepo, Setti
 const { analyzeThreat } = require('./engine/threatScorer');
 const { checkLookalike } = require('./engine/lookalikeDetector');
 const { resolveIpIntelligence, resolveDomainIntelligence, resolveSenderLocation } = require('./engine/geoIpLookup');
+const { parseUploadedEmailFile, DANGEROUS_EXTENSIONS } = require('./engine/fileThreatParser');
 const { SAMPLE_THREATS } = require('./samples/sampleThreats');
 
 const PORT = process.env.PORT || 3000;
@@ -286,6 +287,130 @@ async function handleRequest(req, res) {
           scan: scanRecord,
           incident: createdIncident,
           analysis
+        });
+      }
+
+      // 3b. FILE ANALYZE: Upload and analyze .eml, .msg, .pdf, .txt files from Mobile or Laptop
+      if (pathname === '/api/file/analyze' && method === 'POST') {
+        const body = await parseBody(req);
+        const filename = (body.filename || 'uploaded-email.eml').trim();
+        const mimeType = (body.mimeType || '').trim();
+        const content = body.content || body.base64Content || '';
+
+        if (!content) {
+          return sendJson(res, 400, { error: 'No file content received for analysis.' });
+        }
+
+        const ext = filename.split('.').pop().toLowerCase();
+        if (DANGEROUS_EXTENSIONS.has(ext)) {
+          return sendJson(res, 400, {
+            error: `File upload blocked: Executable or script binary (.${ext}) cannot be processed directly for security reasons. Please upload email documents (.eml, .msg, .txt, .pdf).`
+          });
+        }
+
+        // Decode content if base64 or treat as raw UTF-8
+        let fileBuffer;
+        if (body.isBase64 || body.base64Content) {
+          const cleanB64 = (body.base64Content || body.content).replace(/^data:[^;]+;base64,/, '');
+          fileBuffer = Buffer.from(cleanB64, 'base64');
+        } else {
+          fileBuffer = Buffer.from(content, 'utf8');
+        }
+
+        if (fileBuffer.length > 10 * 1024 * 1024) {
+          return sendJson(res, 400, { error: 'File size exceeds maximum allowed limit of 10MB.' });
+        }
+
+        // Parse file safely without executing anything
+        const parsedEmail = parseUploadedEmailFile(fileBuffer, filename, mimeType);
+
+        // Run 6-module analysis
+        const analysis = analyzeThreat({
+          isParsedFile: true,
+          parsedEmail,
+          attachments: parsedEmail.attachments,
+          fileMetadata: parsedEmail.fileMetadata
+        });
+
+        // Resolve sender location
+        const senderDomain = parsedEmail.from.domain;
+        const senderAddress = parsedEmail.from.address;
+        const originatingIp = analysis.forensicData.originatingIp;
+
+        // Blocklist check
+        let blocklistHit = null;
+        if (senderDomain && BlocklistRepo.isBlocked(senderDomain)) {
+          blocklistHit = { type: 'domain', value: senderDomain, reason: 'Sender domain matches local perimeter blocklist' };
+        } else if (senderAddress && BlocklistRepo.isBlocked(senderAddress)) {
+          blocklistHit = { type: 'sender', value: senderAddress, reason: 'Sender address matches local perimeter blocklist' };
+        } else if (originatingIp && BlocklistRepo.isBlocked(originatingIp)) {
+          blocklistHit = { type: 'ip', value: originatingIp, reason: 'Originating IP matches local perimeter blocklist' };
+        }
+
+        if (blocklistHit) {
+          analysis.threatIndicators.unshift({
+            module: 'Blocklist Enforcement',
+            severity: 'Critical',
+            label: `Local Blocklist Match (${blocklistHit.value})`,
+            weight: 50,
+            detail: blocklistHit.reason
+          });
+          analysis.overallScore = Math.max(90, analysis.overallScore);
+          analysis.verdict = 'Malicious';
+        }
+
+        // Save scan to database
+        const scanRecord = ScansRepo.create({
+          scanType: 'file_upload',
+          sender: parsedEmail.from.address ? `"${parsedEmail.from.name}" <${parsedEmail.from.address}>` : (filename),
+          recipient: parsedEmail.to.address || 'soc-audit@corp.local',
+          subject: parsedEmail.subject || `File: ${filename}`,
+          rawContent: `[Uploaded File: ${filename} (${parsedEmail.fileMetadata.fileSize} bytes)]\n` + (parsedEmail.body ? parsedEmail.body.slice(0, 3000) : ''),
+          extractedUrls: parsedEmail.urls || [],
+          extractedIps: parsedEmail.ips || [],
+          overallScore: analysis.overallScore,
+          verdict: analysis.verdict,
+          phishingScore: analysis.modules.phishing.score,
+          urlScore: analysis.modules.url.score,
+          spamScore: analysis.modules.spam.score,
+          domainScore: analysis.modules.domain.score,
+          ipScore: analysis.modules.ip.score,
+          aiRiskScore: analysis.modules.ai.score,
+          threatIndicators: analysis.threatIndicators,
+          forensicData: analysis.forensicData,
+          explanation: analysis.explanation,
+          recommendations: analysis.recommendations
+        });
+
+        // Automatically create Incident if suspicious or malicious
+        let createdIncident = null;
+        if (analysis.verdict === 'Malicious' || analysis.verdict === 'Suspicious') {
+          const category = analysis.modules.url.score >= 70 ? 'Malicious URL / Dropper' :
+                           analysis.modules.phishing.score >= 70 ? 'Credential Harvester' :
+                           parsedEmail.attachments && parsedEmail.attachments.some(a => a.severity === 'Malicious') ? 'Weaponized Attachment' : 'Suspicious File Analysis';
+
+          createdIncident = IncidentsRepo.create({
+            scanId: scanRecord.id,
+            title: `Alert: ${analysis.verdict} in ${filename}`,
+            severity: analysis.overallScore >= 80 ? 'Critical' : analysis.overallScore >= 60 ? 'High' : 'Medium',
+            status: 'New',
+            category,
+            targetUser: scanRecord.recipient,
+            sourceIp: originatingIp || 'Unknown',
+            sourceDomain: senderDomain || 'Unknown',
+            notes: `Auto-generated incident from uploaded file ${filename} (scan #${scanRecord.id}). Score: ${analysis.overallScore}/100.`,
+            assignedAnalyst: 'SOC Tier 1 Analyst'
+          });
+        }
+
+        return sendJson(res, 201, {
+          success: true,
+          scan: scanRecord,
+          incident: createdIncident,
+          analysis,
+          fileMetadata: parsedEmail.fileMetadata,
+          attachments: parsedEmail.attachments || [],
+          senderLocation: analysis.forensicData.senderLocation
         });
       }
 

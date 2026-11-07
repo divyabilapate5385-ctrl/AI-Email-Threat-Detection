@@ -51,6 +51,25 @@
           <span class="nav-label">Email & URL Scanner</span>
         </a>
 
+        <a class="nav-item" data-target="file-analysis">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+          <span class="nav-label">Email File Analysis</span>
+        </a>
+
+        <a class="nav-item" data-target="sender-geo">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span class="nav-label">Sender Geolocation</span>
+        </a>
+
         <a class="nav-item" data-target="intel">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-2h2zm0-4h-2V7h2z"/>
@@ -279,6 +298,58 @@
               </table>
             </div>
           </div>
+
+          <!-- Dashboard Section 1: Email File Analysis Quick Action -->
+          <div class="card" style="border-left: 4px solid var(--primary-blue); margin-bottom: 20px;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title" style="color: var(--primary-blue);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                  Email File Analysis (Android Mobile & Laptop)
+                </h3>
+                <span class="card-subtitle">Upload .EML, .MSG, .PDF, or .TXT files directly from your phone or laptop storage</span>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="navigateTo('file-analysis')">Open Full Analyzer</button>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div style="font-size: 0.85rem; color: var(--text-secondary); max-width: 600px;">
+                Extracts complete RFC header routes, originating mail gateway IPs, attachments with malware classification, and SPF/DKIM/DMARC cryptographic validation.
+              </div>
+              <button class="btn btn-cyan" onclick="navigateTo('file-analysis')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Upload Email File
+              </button>
+            </div>
+          </div>
+
+          <!-- Dashboard Section 2: Sender Geolocation Intelligence Quick Action -->
+          <div class="card" style="border-left: 4px solid var(--cyan-accent); margin-bottom: 20px;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title" style="color: var(--cyan-accent);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                  Sender Geolocation Intelligence
+                </h3>
+                <span class="card-subtitle">Trace sender network origins, ASNs, coordinates, and Tor/VPN indicators on an interactive radar</span>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="navigateTo('sender-geo')">Open Radar Map</button>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div style="font-size: 0.85rem; color: var(--text-secondary); max-width: 600px;">
+                Identifies originating mail gateway IPs, physical country, city, ISP transit network, local time, and whether the sender is concealing behind an anonymizing relay.
+              </div>
+              <button class="btn btn-outline" onclick="navigateTo('sender-geo')">
+                Track Sender Origin
+              </button>
+            </div>
+          </div>
         </section>
 
         <!-- ==================== VIEW 2: EMAIL & URL SCANNER ==================== -->
@@ -298,6 +369,7 @@
                 <button class="tab-btn active" id="tabModeForm" onclick="setScanMode('form')">Structured Email</button>
                 <button class="tab-btn" id="tabModeEml" onclick="setScanMode('eml')">Raw EML / MIME Header</button>
                 <button class="tab-btn" id="tabModeUrl" onclick="setScanMode('url')">Standalone URL</button>
+                <button class="tab-btn" id="tabModeUpload" onclick="setScanMode('upload')">📁 Upload Email File</button>
               </div>
 
               <!-- Form Mode -->
@@ -350,6 +422,49 @@
                     <label class="form-label">Suspicious Target URL or Domain</label>
                     <input type="text" class="form-input" id="scanStandaloneUrl" placeholder="https://paypaI.com/cgi-bin/webscr?cmd=_login">
                   </div>
+                </div>
+
+                <!-- Upload Email File Mode (Android & Laptop) -->
+                <div id="scanUploadFields" style="display: none;">
+                  <div class="upload-dropzone" id="scannerDropzone" onclick="triggerFileInput('scannerFileInput')">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--cyan-accent); margin-bottom: 8px;">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
+                      Choose Email File from Android Device or Laptop
+                    </div>
+                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 10px;">
+                      Tap on mobile to select from storage, or drag & drop files here (Max 10MB)
+                    </div>
+                    <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                      <span class="badge badge-neutral" style="font-size: 0.72rem;">.EML</span>
+                      <span class="badge badge-neutral" style="font-size: 0.72rem;">.MSG (Outlook)</span>
+                      <span class="badge badge-neutral" style="font-size: 0.72rem;">.PDF (Scans)</span>
+                      <span class="badge badge-neutral" style="font-size: 0.72rem;">.TXT</span>
+                    </div>
+                    <input type="file" id="scannerFileInput" accept=".eml,.msg,.txt,.pdf,.html,.htm,.json,message/rfc822,text/*,application/pdf,*/*" style="display:none;" onchange="handleFileSelected(this, 'scanner')">
+                  </div>
+
+                  <div id="scannerFileSelected" class="file-selected-card" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--cyan-accent);">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                      </svg>
+                      <div>
+                        <div id="scannerFileName" style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">file.eml</div>
+                        <div id="scannerFileSize" style="font-size: 0.75rem; color: var(--text-secondary);">0 KB</div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="removeSelectedFile('scanner')">Remove & Change File</button>
+                  </div>
+
+                  <div id="scannerProgressWrap" class="upload-progress-wrap">
+                    <div id="scannerProgressBar" class="upload-progress-bar"></div>
+                  </div>
+                  <div id="scannerUploadStatus" style="font-size: 0.8rem; color: var(--cyan-accent); text-align: center; margin-top: 4px; display: none;"></div>
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -502,6 +617,278 @@
               <span class="card-subtitle" id="scanIndicatorCount">0 indicators flagged</span>
             </div>
             <div id="scanIndicatorsList"></div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW: EMAIL FILE ANALYSIS ==================== -->
+        <section id="view-file-analysis" class="view-section">
+          <!-- Section Title & Description Card -->
+          <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--cyan-accent);">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title" style="color: var(--cyan-accent);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="18" x2="12" y2="12"></line>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                  </svg>
+                  Email File Forensic Analysis (Android & Laptop Storage)
+                </h3>
+                <span class="card-subtitle">Upload raw email files (.eml, .msg, .pdf, .txt) directly from Android storage or laptop for deep MIME parsing, attachment disassembly, and explainable threat scoring</span>
+              </div>
+            </div>
+
+            <!-- Upload Dropzone (Supports mobile tap & desktop drag-and-drop) -->
+            <div class="upload-dropzone" id="filePageDropzone" onclick="triggerFileInput('filePageInput')">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--cyan-accent); margin-bottom: 10px;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">
+                Choose Email File from Android Device or Laptop
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px;">
+                Tap on mobile to select from Downloads/Documents, or drag & drop from computer (Max 10 MB)
+              </div>
+              <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                <span class="badge badge-neutral">.EML (RFC 822)</span>
+                <span class="badge badge-neutral">.MSG (Outlook OLE)</span>
+                <span class="badge badge-neutral">.PDF (Email Prints)</span>
+                <span class="badge badge-neutral">.TXT (Plain Text)</span>
+              </div>
+              <input type="file" id="filePageInput" accept=".eml,.msg,.txt,.pdf,.html,.htm,.json,message/rfc822,text/*,application/pdf,*/*" style="display:none;" onchange="handleFileSelected(this, 'page')">
+            </div>
+
+            <!-- File Selected Banner with Remove Option -->
+            <div id="filePageSelected" class="file-selected-card" style="display: none;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--cyan-accent);">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <div>
+                  <div id="filePageName" style="font-weight: 700; font-size: 1rem; color: var(--text-main);">email.eml</div>
+                  <div id="filePageMeta" style="font-size: 0.8rem; color: var(--text-secondary);">Size: 0 KB | Type: EML</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn btn-cyan btn-sm" id="btnRunFileAnalysis" onclick="executeFileAnalysis('page')">
+                  Analyze File Now
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="removeSelectedFile('page')">
+                  Remove & Change File
+                </button>
+              </div>
+            </div>
+
+            <!-- Progress Bar Indicator -->
+            <div id="filePageProgressWrap" class="upload-progress-wrap">
+              <div id="filePageProgressBar" class="upload-progress-bar"></div>
+            </div>
+            <div id="filePageUploadStatus" style="font-size: 0.85rem; color: var(--cyan-accent); text-align: center; margin-top: 6px; display: none;"></div>
+
+            <!-- Sample Threat Files Buttons -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 16px; font-size: 0.8rem; color: var(--text-secondary);">
+              <span>Load Sample Threat Files:</span>
+              <button class="btn btn-outline btn-sm" onclick="loadSampleFileThreat('m365')">📄 Microsoft Phish (.EML)</button>
+              <button class="btn btn-outline btn-sm" onclick="loadSampleFileThreat('docusign')">📦 Trojan Dropper (.MSG)</button>
+              <button class="btn btn-outline btn-sm" onclick="loadSampleFileThreat('invoice_pdf')">📑 Invoice Fraud (.PDF)</button>
+              <button class="btn btn-outline btn-sm" onclick="loadSampleFileThreat('clean_google')">🛡️ Clean Digest (.EML)</button>
+            </div>
+          </div>
+
+          <!-- Analysis Results Container -->
+          <div id="fileAnalysisResults" style="display: none;">
+            <!-- Top Score & Verdict Grid -->
+            <div class="grid-2">
+              <!-- Verdict Card -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">File Threat Verdict</h3>
+                  <span id="fileVerdictBadge" class="badge badge-neutral">PENDING</span>
+                </div>
+                <div class="score-display">
+                  <div class="score-circle safe" id="fileScoreCircle">
+                    <span id="fileScoreValue">0</span>
+                    <span class="score-circle-sub">RISK</span>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 1.15rem; font-weight: 700;" id="fileResultHeading">Analyzing File...</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;" id="fileResultSummary"></p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sender Location & Relay Snapshot -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Sender Origin & Mail Gateway</h3>
+                  <span id="fileSenderCountryBadge" class="badge badge-neutral">🌐 GEOLOCATION</span>
+                </div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;" id="fileSenderCityCountry">--</div>
+                <div style="font-size: 0.85rem; color: var(--cyan-accent); margin-bottom: 8px;" id="fileSenderIsp">ISP / ASN: --</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);" id="fileSenderCoords">Coordinates: --</div>
+                <div style="margin-top: 14px;">
+                  <button class="btn btn-outline btn-sm" onclick="navigateToSenderGeoFromAnalysis()">
+                    Open Full Geolocation Radar Map
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Forensic Breakdown Grid -->
+            <div class="grid-2">
+              <!-- Email Metadata & Authentication -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Extracted Email Identity & RFC Headers</h3>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                  <div><strong style="color: var(--text-secondary);">Sender (From):</strong> <span id="fileMetaSender" style="color: var(--text-main); font-weight: 600;">--</span></div>
+                  <div><strong style="color: var(--text-secondary);">Recipient (To):</strong> <span id="fileMetaRecipient" style="color: var(--text-main);">--</span></div>
+                  <div><strong style="color: var(--text-secondary);">Subject:</strong> <span id="fileMetaSubject" style="color: var(--text-main); font-weight: 600;">--</span></div>
+                  <div><strong style="color: var(--text-secondary);">Date & Time:</strong> <span id="fileMetaDate" style="color: var(--text-main);">--</span></div>
+                  <div><strong style="color: var(--text-secondary);">Originating IP:</strong> <span id="fileMetaIp" style="color: var(--primary-blue); font-family: monospace;">--</span></div>
+                  <div style="margin-top: 6px;">
+                    <strong style="color: var(--text-secondary); display: block; margin-bottom: 4px;">Authentication Results:</strong>
+                    <div style="display: flex; gap: 8px;" id="fileMetaAuthBadges"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Attachments Inspector -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Extracted Attachments & Payloads</h3>
+                  <span id="fileAttachmentCountBadge" class="badge badge-neutral">0 Attachments</span>
+                </div>
+                <div id="fileAttachmentsList" class="attachment-badge-list">
+                  <p style="font-size: 0.85rem; color: var(--text-secondary);">No attached binary payloads detected in this message stream.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Extracted URLs & Threat Indicators -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Extracted Embedded Action Links & Indicators</h3>
+              </div>
+              <div id="fileUrlsList" style="margin-bottom: 14px; font-size: 0.85rem;"></div>
+              <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--cyan-accent); margin-bottom: 8px;">6-Module Threat Indicators</h4>
+              <div id="fileIndicatorsList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW: SENDER GEOLOCATION INTELLIGENCE ==================== -->
+        <section id="view-sender-geo" class="view-section">
+          <!-- Disclaimer Notice -->
+          <div class="geo-disclaimer-box">
+            <strong>📍 Forensic Geolocation Notice:</strong> IP geolocation identifies the approximate geographical region of the sender's mail server, border gateway, or network Autonomous System (ASN). It does not identify an exact personal street address or live end-user GPS position. Email providers like Google, Microsoft, and Apple route mail through regional data centers.
+          </div>
+
+          <!-- Search / Input Card -->
+          <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--cyan-accent);">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title" style="color: var(--cyan-accent);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                  Sender Geolocation Intelligence & Physical Origin Tracker
+                </h3>
+                <span class="card-subtitle">Perform real-time geolocation analysis on sender email addresses, domains, or originating gateway IPs</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+              <input type="text" class="form-input" id="senderGeoSearchInput" placeholder="Enter sender email (e.g. support@micros0ft-portal.xyz), domain, or IP..." style="flex: 1; min-width: 260px;" onkeydown="if(event.key==='Enter') executeSenderGeoLookup();">
+              <button class="btn btn-cyan" onclick="executeSenderGeoLookup()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                Track Sender Origin
+              </button>
+            </div>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 0.8rem; color: var(--text-secondary);">
+              <span>Test Threat Origins:</span>
+              <button class="btn btn-outline btn-sm" onclick="lookupGeoPreset('support@micros0ft-portal.xyz')">🇩🇪 Tor Exit (Frankfurt)</button>
+              <button class="btn btn-outline btn-sm" onclick="lookupGeoPreset('ceo-alerts@company.ru')">🇷🇴 BEC Relay (Bucharest)</button>
+              <button class="btn btn-outline btn-sm" onclick="lookupGeoPreset('invoice@consultant-group.top')">🇳🇱 Trojan Dropper (Amsterdam)</button>
+              <button class="btn btn-outline btn-sm" onclick="lookupGeoPreset('security-digest@google.com')">🇺🇸 Google Workspace (California)</button>
+              <button class="btn btn-outline btn-sm" onclick="lookupGeoPreset('103.145.13.44')">🇻🇳 Botnet Relay (Hanoi)</button>
+            </div>
+          </div>
+
+          <!-- 9-Point Intelligence Grid -->
+          <div class="geo-intel-card-grid">
+            <!-- 1. IP Address -->
+            <div class="geo-intel-cell">
+              <div class="geo-intel-label">1. Originating IP Address</div>
+              <div class="geo-intel-value" id="geoCellIp" style="color: var(--primary-blue); font-family: monospace;">--</div>
+            </div>
+
+            <!-- 2. Country with Flag -->
+            <div class="geo-intel-cell">
+              <div class="geo-intel-label">2. Approximate Country</div>
+              <div class="geo-intel-value" id="geoCellCountry">🌐 --</div>
+            </div>
+
+            <!-- 3. State / Region -->
+            <div class="geo-intel-cell">
+              <div class="geo-intel-label">3. State / Region</div>
+              <div class="geo-intel-value" id="geoCellRegion">--</div>
+            </div>
+
+            <!-- 4. City -->
+            <div class="geo-intel-cell">
+              <div class="geo-intel-label">4. City</div>
+              <div class="geo-intel-value" id="geoCellCity">--</div>
+            </div>
+
+            <!-- 5. Internet Service Provider -->
+            <div class="geo-intel-cell">
+              <div class="geo-intel-label">5. Internet Service Provider (ISP)</div>
+              <div class="geo-intel-value" id="geoCellIsp">--</div>
+            </div>
+
+            <!-- 6. ASN Information -->
+            <div class="geo-intel-cell">
+              <div class="geo-intel-label">6. Autonomous System (ASN)</div>
+              <div class="geo-intel-value" id="geoCellAsn">--</div>
+            </div>
+
+            <!-- 7. Coordinates -->
+            <div class="geo-intel-cell">
+              <div class="geo-intel-label">7. Latitude / Longitude</div>
+              <div class="geo-intel-value" id="geoCellCoords">0.0000°, 0.0000°</div>
+            </div>
+
+            <!-- 8. VPN / Proxy / Tor Detection -->
+            <div class="geo-intel-cell">
+              <div class="geo-intel-label">8. Anonymity / Relay Detection</div>
+              <div class="geo-intel-value" id="geoCellAnonymity">--</div>
+            </div>
+
+            <!-- 9. IP Reputation & Risk Level -->
+            <div class="geo-intel-cell">
+              <div class="geo-intel-label">9. IP Reputation & Risk Level</div>
+              <div class="geo-intel-value" id="geoCellRisk">--</div>
+            </div>
+          </div>
+
+          <!-- Interactive World Radar Map -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+              <h3 class="card-title">Interactive Sender Geolocation Radar</h3>
+              <span class="card-subtitle" id="geoRadarSubtitle">Displaying geographic origin on high-resolution Mercator coordinate projection</span>
+            </div>
+            <div style="height: 340px; background: #1c2737; border-radius: 6px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;" id="senderGeoMapContainer">
+              <!-- SVG interactive world projection rendered via JS -->
+            </div>
           </div>
         </section>
 

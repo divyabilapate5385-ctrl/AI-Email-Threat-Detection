@@ -464,7 +464,8 @@ function resolveSenderLocation(input, explicitIp = null) {
     countryFlag,
     timezone: timezoneStr,
     localTime: localTimeStr,
-    reverseDns: `mail-gw-${targetIp.replace(/\./g, '-')}.${(ipIntel.countryCode || 'net').toLowerCase()}.net`
+    reverseDns: `mail-gw-${targetIp.replace(/\./g, '-')}.${(ipIntel.countryCode || 'net').toLowerCase()}.net`,
+    reliabilityNotice: 'Forensic Geolocation Notice: Geolocation coordinates and country/city estimates reflect originating mail gateway servers, network ASNs, or proxy relays. They do not represent an exact live physical street address or personal GPS coordinate.'
   };
 }
 
