@@ -13,7 +13,7 @@ const { ScansRepo, IncidentsRepo, BlocklistRepo, ThreatIntelRepo, VpnRepo, Setti
 const { analyzeThreat } = require('./engine/threatScorer');
 const { checkLookalike } = require('./engine/lookalikeDetector');
 const { resolveIpIntelligence, resolveDomainIntelligence, resolveSenderLocation } = require('./engine/geoIpLookup');
-const { parseUploadedEmailFile, DANGEROUS_EXTENSIONS } = require('./engine/fileThreatParser');
+const { parseUploadedEmailFile, validateEmailFile, DANGEROUS_EXTENSIONS } = require('./engine/fileThreatParser');
 const { SAMPLE_THREATS } = require('./samples/sampleThreats');
 
 const PORT = process.env.PORT || 3000;
@@ -302,11 +302,6 @@ async function handleRequest(req, res) {
         }
 
         const ext = filename.split('.').pop().toLowerCase();
-        if (DANGEROUS_EXTENSIONS.has(ext)) {
-          return sendJson(res, 400, {
-            error: `File upload blocked: Executable or script binary (.${ext}) cannot be processed directly for security reasons. Please upload email documents (.eml, .msg, .txt, .pdf).`
-          });
-        }
 
         // Decode content if base64 or treat as raw UTF-8
         let fileBuffer;
@@ -318,9 +313,31 @@ async function handleRequest(req, res) {
         }
 
         if (fileBuffer.length > 10 * 1024 * 1024) {
-          return sendJson(res, 400, { error: 'File size exceeds maximum allowed limit of 10MB.' });
+          return sendJson(res, 400, {
+            success: false,
+            valid: false,
+            errorType: 'FILE_TOO_LARGE',
+            error: 'File size exceeds maximum allowed limit of 10MB.'
+          });
         }
 
+        // Strict Email File Content Validation (Checks magic bytes, headers, and structure)
+        const validation = validateEmailFile(fileBuffer, filename, mimeType);
+        if (!validation.valid) {
+          // Do NOT generate a phishing score!
+          // Do NOT display SAFE or SUSPICIOUS results!
+          // Do NOT run the email threat detection engine!
+          // Do NOT display fake sender information or fake IP geolocation results!
+          return sendJson(res, 422, {
+            success: false,
+            valid: false,
+            errorType: validation.errorType,
+            error: validation.message,
+            filename
+          });
+        }
+
+        // ONLY VALID EMAIL FILES REACH THIS STAGE
         // Parse file safely without executing anything
         const parsedEmail = parseUploadedEmailFile(fileBuffer, filename, mimeType);
 

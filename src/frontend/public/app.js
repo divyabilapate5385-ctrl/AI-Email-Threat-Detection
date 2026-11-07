@@ -1397,20 +1397,113 @@ function handleFileSelected(inputEl, context) {
   }
 }
 
+function showValidationError(context, title, message) {
+  if (context === 'page') {
+    const errCard = document.getElementById('fileValidationErrorCard');
+    const errTitle = document.getElementById('fileValidationErrorTitle');
+    const errMsg = document.getElementById('fileValidationErrorMessage');
+    const selBox = document.getElementById('filePageSelected');
+    const resBox = document.getElementById('fileAnalysisResults');
+    const pWrap = document.getElementById('filePageProgressWrap');
+    const pStatus = document.getElementById('filePageUploadStatus');
+
+    if (resBox) resBox.style.display = 'none';
+    if (selBox) selBox.style.display = 'none';
+    if (pWrap) pWrap.style.display = 'none';
+    if (pStatus) pStatus.style.display = 'none';
+
+    if (errCard) {
+      errCard.style.display = 'block';
+      if (errTitle) errTitle.textContent = title || 'Invalid File';
+      if (errMsg) errMsg.textContent = message || 'Please upload a valid email file (.eml, .msg) or a PDF/TXT file containing email content.';
+      errCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    state.selectedFiles.page = null;
+  } else {
+    const errCard = document.getElementById('scannerValidationErrorCard');
+    const errTitle = document.getElementById('scannerValidationErrorTitle');
+    const errMsg = document.getElementById('scannerValidationErrorMessage');
+    const selBox = document.getElementById('scannerFileSelected');
+    const pWrap = document.getElementById('scannerProgressWrap');
+    const pStatus = document.getElementById('scannerUploadStatus');
+
+    if (selBox) selBox.style.display = 'none';
+    if (pWrap) pWrap.style.display = 'none';
+    if (pStatus) pStatus.style.display = 'none';
+
+    if (errCard) {
+      errCard.style.display = 'block';
+      if (errTitle) errTitle.textContent = title || 'Invalid File';
+      if (errMsg) errMsg.textContent = message || 'Please upload a valid email file (.eml, .msg) or a PDF/TXT file containing email content.';
+    }
+
+    // Reset scanner score display to neutral state - NEVER show phishing score for invalid file
+    const scoreVal = document.getElementById('scanScoreValue');
+    const scoreCircle = document.getElementById('scanScoreCircle');
+    const verdictBadge = document.getElementById('scanResultVerdictBadge');
+    const heading = document.getElementById('scanResultHeading');
+    const summary = document.getElementById('scanResultSummary');
+    const locCard = document.getElementById('scanSenderLocationCard');
+
+    if (scoreVal) scoreVal.textContent = '0';
+    if (scoreCircle) scoreCircle.className = 'score-circle safe';
+    if (verdictBadge) {
+      verdictBadge.textContent = 'INVALID FILE';
+      verdictBadge.className = 'badge badge-neutral';
+    }
+    if (heading) heading.textContent = 'Analysis Blocked: Non-Email File';
+    if (summary) summary.textContent = message || 'The uploaded file does not contain valid email content. Phishing analysis was aborted.';
+    if (locCard) locCard.style.display = 'none';
+
+    state.selectedFiles.scanner = null;
+  }
+}
+
+function clearValidationError(context) {
+  if (context === 'page') {
+    const errCard = document.getElementById('fileValidationErrorCard');
+    if (errCard) errCard.style.display = 'none';
+  } else {
+    const errCard = document.getElementById('scannerValidationErrorCard');
+    if (errCard) errCard.style.display = 'none';
+  }
+}
+
 function processFileSelection(file, context) {
   if (!file) return;
 
-  const ext = file.name.split('.').pop().toLowerCase();
-  const blockedExts = ['exe', 'dll', 'bat', 'cmd', 'scr', 'vbs', 'js', 'wsf', 'hta', 'ps1', 'msi', 'com', 'pif', 'cpl'];
+  clearValidationError(context);
 
-  if (blockedExts.includes(ext)) {
-    alert(`Executable or script file (.${ext}) blocked for security reasons. Please upload an email file (.eml, .msg, .txt, .pdf).`);
+  const ext = file.name.split('.').pop().toLowerCase();
+  const supportedExtensions = ['eml', 'msg', 'pdf', 'txt'];
+
+  // Check if extension is unsupported (e.g. JPG, PNG, MP3, MP4, DOCX, XLSX, ZIP, EXE)
+  if (!supportedExtensions.includes(ext)) {
+    showValidationError(
+      context,
+      'Invalid File',
+      'Invalid File: This is not a supported email file. Please upload a valid email file (.eml, .msg) or a PDF/TXT file containing email content.'
+    );
     return;
   }
 
-  // 10MB limit
+  // File size validation (10MB limit)
   if (file.size > 10 * 1024 * 1024) {
-    alert(`File size exceeds 10MB maximum limit (${(file.size / (1024 * 1024)).toFixed(2)} MB).`);
+    showValidationError(
+      context,
+      'File Too Large',
+      `File size exceeds 10MB maximum limit (${(file.size / (1024 * 1024)).toFixed(2)} MB). Please select a file under 10MB.`
+    );
+    return;
+  }
+
+  // Empty file check
+  if (file.size < 15) {
+    showValidationError(
+      context,
+      'Unable to analyze',
+      'Unable to analyze: The uploaded file does not contain valid readable email content. Please upload another email file.'
+    );
     return;
   }
 
@@ -1441,6 +1534,8 @@ function processFileSelection(file, context) {
 
 function removeSelectedFile(context) {
   state.selectedFiles[context] = null;
+  clearValidationError(context);
+
   if (context === 'scanner') {
     const input = document.getElementById('scannerFileInput');
     if (input) input.value = '';
@@ -1463,9 +1558,11 @@ function removeSelectedFile(context) {
 async function executeFileAnalysis(context) {
   const file = state.selectedFiles[context];
   if (!file) {
-    alert('Please select an email file (.eml, .msg, .pdf, .txt) first.');
+    showValidationError(context, 'No File Selected', 'Please select a valid email file (.eml, .msg, .pdf, .txt) first.');
     return;
   }
+
+  clearValidationError(context);
 
   const pWrap = document.getElementById(context === 'scanner' ? 'scannerProgressWrap' : 'filePageProgressWrap');
   const pBar = document.getElementById(context === 'scanner' ? 'scannerProgressBar' : 'filePageProgressBar');
@@ -1475,14 +1572,14 @@ async function executeFileAnalysis(context) {
   if (pBar) pBar.style.width = '25%';
   if (pStatus) {
     pStatus.style.display = 'block';
-    pStatus.textContent = 'Reading email stream from device storage...';
+    pStatus.textContent = 'Validating email file format & integrity...';
   }
 
   const reader = new FileReader();
 
   reader.onload = async () => {
     try {
-      if (pBar) pBar.style.width = '65%';
+      if (pBar) pBar.style.width = '60%';
       if (pStatus) pStatus.textContent = 'Disassembling RFC headers, attachments, and URLs...';
 
       const payload = {
@@ -1500,8 +1597,19 @@ async function executeFileAnalysis(context) {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'File analysis failed.');
+      // Check if validation failed (HTTP 422 or valid: false)
+      if (!res.ok || !data.success || data.valid === false) {
+        if (pWrap) pWrap.style.display = 'none';
+        if (pStatus) pStatus.style.display = 'none';
+
+        const errTitle = data.errorType === 'UNSUPPORTED_FORMAT' ? 'Invalid File'
+                       : data.errorType === 'NO_EMAIL_CONTENT' ? 'No Valid Email Content'
+                       : 'Unable to analyze';
+
+        const errMsg = data.error || 'The uploaded file does not contain valid readable email content. Please upload another email file.';
+        
+        showValidationError(context, errTitle, errMsg);
+        return;
       }
 
       if (pBar) pBar.style.width = '100%';
@@ -1530,14 +1638,18 @@ async function executeFileAnalysis(context) {
     } catch (err) {
       if (pWrap) pWrap.style.display = 'none';
       if (pStatus) pStatus.style.display = 'none';
-      alert(`Upload Analysis Error: ${err.message}`);
+      showValidationError(context, 'Unable to analyze', err.message || 'An error occurred during file analysis.');
     }
   };
 
   reader.onerror = () => {
     if (pWrap) pWrap.style.display = 'none';
     if (pStatus) pStatus.style.display = 'none';
-    alert('Failed to read file from local device storage.');
+    showValidationError(context, 'File Read Error', 'Failed to read file from local device storage.');
+  };
+
+  reader.readAsDataURL(file);
+}
   };
 
   reader.readAsDataURL(file);

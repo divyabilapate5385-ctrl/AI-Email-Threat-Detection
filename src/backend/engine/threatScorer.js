@@ -59,7 +59,7 @@ function scorePhishingModule(parsedEmail) {
   }
 
   // 2. Display Name Spoofing
-  parsedEmail.headerAnomalies.forEach(anomaly => {
+  (parsedEmail.headerAnomalies || []).forEach(anomaly => {
     if (anomaly.type === 'DISPLAY_NAME_SPOOFING') {
       indicators.push({
         module: 'Phishing',

@@ -442,7 +442,33 @@ function resolveSenderLocation(input, explicitIp = null) {
   }
 
   if (!targetIp) {
-    targetIp = '185.220.101.5';
+    return {
+      ip: 'Unavailable',
+      country: 'Unavailable',
+      countryCode: '',
+      city: 'Not Available',
+      region: 'Not Available',
+      latitude: 0,
+      longitude: 0,
+      asn: 'None',
+      asName: 'No Originating IP Header Detected',
+      isp: 'Sender IP Hidden / Unavailable',
+      isTor: false,
+      isVpn: false,
+      isProxy: false,
+      isDatacenter: false,
+      threatScore: 0,
+      threatCategory: 'None',
+      threatFeed: 'Clean',
+      valid: false,
+      senderEmail: senderEmail || 'Unavailable',
+      senderDomain: senderDomain || 'Unavailable',
+      countryFlag: '🌐',
+      timezone: 'UTC+0:00',
+      localTime: '--',
+      reverseDns: 'None',
+      reliabilityNotice: 'Originating IP header not present in email hops. Webmail providers often conceal personal sender IP addresses for privacy.'
+    };
   }
 
   const ipIntel = resolveIpIntelligence(targetIp);
